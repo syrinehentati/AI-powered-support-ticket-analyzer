@@ -1,0 +1,41 @@
+[
+  {
+    "ticket_id": "TKT-011",
+    "title": "Fahrzeugdaten-Gateway antwortet nicht",
+    "severity": "critical",
+    "language": "German",
+    "description": "Das zentrale Fahrzeugdaten-Gateway reagiert seit heute Morgen nicht mehr auf Anfragen. Betroffen sind alle Fahrzeuge der Produktionslinie 3 und 4. Die Techniker können keine Diagnosedaten abrufen und die Qualitätskontrolle ist vollständig blockiert. Das Problem trat unmittelbar nach dem Neustart des Servers um 05:30 Uhr auf.",
+    "logs": [
+      "2026-05-14 05:31:02 FATAL GatewayService - Failed to bind to port 8443: address already in use",
+      "2026-05-14 05:31:02 ERROR ServiceRegistry - Gateway heartbeat lost: last seen 05:30:58",
+      "2026-05-14 05:31:03 WARN  LoadBalancer - Removing unhealthy node gateway-prod-01 from rotation",
+      "2026-05-14 05:31:04 ERROR DiagnosticClient - Unable to reach gateway after 3 retries: connection refused"
+    ]
+  },
+  {
+    "ticket_id": "TKT-012",
+    "title": "Speicherfehler im Echtzeit-Diagnosesystem",
+    "severity": "high",
+    "language": "German",
+    "description": "Das Echtzeit-Diagnosesystem für Motorsteuergeräte gibt seit dem gestrigen Abend sporadische Speicherfehler aus. Die Fehler treten besonders bei der gleichzeitigen Diagnose von mehr als 8 Fahrzeugen auf. Zwei Diagnosesitzungen wurden unerwartet beendet was zu unvollständigen Fehlerberichten geführt hat. Der Kunde wartet dringend auf eine Lösung.",
+    "logs": [
+      "2026-05-13 19:44:21 ERROR DiagnosticEngine - Segmentation fault at memory address 0x00007f4a2c",
+      "2026-05-13 19:44:21 WARN  SessionManager - Concurrent session limit approaching: 7/8 active",
+      "2026-05-13 19:44:22 FATAL MemoryAllocator - Failed to allocate 524288 bytes: out of memory",
+      "2026-05-13 19:44:23 ERROR ReportWriter - Session TKT-DIAG-0091 terminated before completion"
+    ]
+  },
+  {
+    "ticket_id": "TKT-013",
+    "title": "Authentifizierungstoken läuft zu früh ab",
+    "severity": "medium",
+    "language": "German",
+    "description": "Mehrere Ingenieure berichten dass ihre Authentifizierungstoken bereits nach 10 bis 15 Minuten ablaufen obwohl die Konfiguration eine Gültigkeitsdauer von 8 Stunden vorsieht. Dies zwingt die Benutzer sich mehrmals täglich neu anzumelden was den Arbeitsablauf erheblich unterbricht. Das Problem wurde nach dem letzten Sicherheitsupdate vom Mittwoch festgestellt.",
+    "logs": [
+      "2026-05-14 10:12:44 WARN  TokenService - Token expiry set to 612s instead of configured 28800s",
+      "2026-05-14 10:12:44 ERROR ConfigLoader - Environment variable TOKEN_TTL parsed as seconds not hours",
+      "2026-05-14 10:13:01 WARN  AuthMiddleware - Forced re-authentication for user: h.mueller@kpit.com",
+      "2026-05-14 10:13:02 INFO  AuditLog - 47 forced logouts recorded in last 60 minutes"
+    ]
+  }
+]

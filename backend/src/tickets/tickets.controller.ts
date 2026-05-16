@@ -1,0 +1,28 @@
+import { Controller, Get ,Post, Body, Param } from '@nestjs/common';
+import { TicketsService } from './tickets.service';
+import {CreateTicketDto } from './dto/create-ticket.dto';
+
+@Controller('tickets')
+export class TicketsController {
+    constructor(private readonly ticketsService: TicketsService) {}
+
+    @Get()
+    findAll() {
+        return this.ticketsService.findAll();
+    } 
+
+    @Get(':id')
+    findOne(@Param('id') id: string){
+        return this.ticketsService.findOne(id);
+    }
+
+    @Post()
+    create (@Body() body: CreateTicketDto){
+        return this.ticketsService.createAndAnlayze(body);
+    }
+
+    @Post('bulk-analyze')
+    analyzeBulk(){
+        return this.ticketsService.analyzeBulk();
+    }
+}
