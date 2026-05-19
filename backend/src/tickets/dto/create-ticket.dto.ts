@@ -17,10 +17,6 @@ export class CreateTicketDto {
   @IsNotEmpty()
   severity!: string;
 
-  @IsString()
-  @IsNotEmpty()
-  language!: string;
-
   @IsArray()
   logs!: string[];
 }

@@ -5,7 +5,6 @@ Analyzes tickets in English, French, Arabic, and German and returns structured r
 ## What it does
 
 -Accepts support tickets in any language
--Detects the input language automatically
 -Returns root cause analysis and resolution steps in English
 -Categorizes tickets by the type and severity
 

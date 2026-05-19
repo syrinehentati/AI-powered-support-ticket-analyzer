@@ -3,7 +3,6 @@ export interface Ticket {
   title: string;
   description: string;
   severity: string;
-  language: string;
   logs: string[];
   analysis?: {
     summary: string;
