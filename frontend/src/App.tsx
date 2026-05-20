@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import TicketForm from './components/TicketForm';
 import TicketList from './components/TicketList';
+import BulkAnalyze from './components/bulkAnalyze';
 
-type Screen = 'analyze' | 'list';
+type Screen = 'analyze' | 'list' | 'bulk';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('analyze');
@@ -19,13 +20,14 @@ function App() {
   });
 
   return (
-    <div style={{
-      maxWidth: '800px',
-      margin: '0 auto',
-      padding: '2rem 1rem',
-      fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
-    }}>
-
+    <div
+      style={{
+        maxWidth: '800px',
+        margin: '0 auto',
+        padding: '2rem 1rem',
+        fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
+      }}
+    >
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ margin: '0 0 4px', fontSize: '24px', color: '#2c3e50' }}>
           Support Ticket Analyzer
@@ -35,7 +37,9 @@ function App() {
         </p>
       </div>
 
-      <div style={{ borderBottom: '1px solid #e0e0e0', marginBottom: '1.5rem' }}>
+      <div
+        style={{ borderBottom: '1px solid #e0e0e0', marginBottom: '1.5rem' }}
+      >
         <button
           style={tabStyle(screen === 'analyze')}
           onClick={() => setScreen('analyze')}
@@ -48,11 +52,17 @@ function App() {
         >
           All Tickets
         </button>
+        <button
+          style={tabStyle(screen === 'bulk')}
+          onClick={() => setScreen('bulk')}
+        >
+          Bulk Analyze
+        </button>
       </div>
 
       {screen === 'analyze' && <TicketForm />}
       {screen === 'list' && <TicketList />}
-
+      {screen === 'bulk' && <BulkAnalyze />}
     </div>
   );
 }
