@@ -44,3 +44,14 @@ You don’t have to ever use `eject`. The curated feature set is suitable for sm
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+## Screenshots
+
+### Single Ticket Analyzer
+![Analyzer](screenshots/screenshot-1-analyzer.jpg)
+
+### Ticket List
+![List](screenshots/screenshot-2-bulk.jpg)
+
+### Bulk Analyze
+![Bulk](screenshots/screenshot-3-list.jpg)

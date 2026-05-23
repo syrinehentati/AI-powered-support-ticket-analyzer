@@ -1,30 +1,55 @@
-# AI-powered support ticket analyzer
-A multilingual support ticket analysis systm built with NestJs and Gemini Ai.
-Analyzes tickets in English, French, Arabic, and German and returns structured resoltuion guidance in English.
+# AI-Powered Support Ticket Analyzer
+
+A multilingual support ticket analysis system built with NestJS and Google Gemini AI. Paste a support ticket in any language and get back a structured English analysis with root cause and resolution steps.
 
 ## What it does
 
--Accepts support tickets in any language
--Returns root cause analysis and resolution steps in English
--Categorizes tickets by the type and severity
-
+- Accepts support tickets in English, French, Arabic, and German
+- Automatically detects the input language
+- Returns structured analysis in English including summary, root cause, resolution steps, category, and severity
+- Stores analyzed tickets for review
+- Bulk analyzes multiple tickets at once
 
 ## Tech stack
--NestJS
--Google Gemini AI
--TypeScript
 
- ##Endpoints
- -POST /analysis/analyze - analyze a signle ticket
- -POST /tickets -create and anlyze a ticket
- - GET /tickets - get all analyzed tcikets
- -Get /tickets/:id - get one ticket by ID
- -POST /tickets/bulk-analyze -analyze all mock tickets
+**Backend:** NestJS, TypeScript, Google Gemini AI, class-validator
 
+**Frontend:** React, TypeScript, Axios
 
+## Screenshots
 
- ## Setup
- 1. Clone the repo 
- 2. cd backend && npm install
- 3. Create .env with GEMINI_API_KEY = your _Key 
- 4.npm run start:dev
+coming soon
+
+## Getting started
+
+### Backend
+```bash
+cd backend
+npm install
+cp .env.example .env
+# add your GEMINI_API_KEY to .env
+npm run start:dev
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+cp .env.example .env
+# add REACT_APP_API_URL=http://localhost:3000
+npm run start
+```
+
+## API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | /analysis/analyze | Analyze a single ticket |
+| POST | /tickets | Create and analyze a ticket |
+| GET | /tickets | Get all analyzed tickets |
+| GET | /tickets/:id | Get one ticket by ID |
+| POST | /tickets/bulk-analyze | Analyze all mock tickets |
+
+## Why I built this
+
+I spent 5 months working second-level technical support for enterprise automotive clients. Every day I read incident reports in Arabic, French, and English and had to manually identify root causes and write resolutions. I built this tool to automate exactly that process using AI.
