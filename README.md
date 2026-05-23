@@ -23,6 +23,7 @@ coming soon
 ## Getting started
 
 ### Backend
+
 ```bash
 cd backend
 npm install
@@ -32,6 +33,7 @@ npm run start:dev
 ```
 
 ### Frontend
+
 ```bash
 cd frontend
 npm install
@@ -42,14 +44,14 @@ npm run start
 
 ## API Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | /analysis/analyze | Analyze a single ticket |
-| POST | /tickets | Create and analyze a ticket |
-| GET | /tickets | Get all analyzed tickets |
-| GET | /tickets/:id | Get one ticket by ID |
-| POST | /tickets/bulk-analyze | Analyze all mock tickets |
+| Method | Endpoint              | Description                 |
+| ------ | --------------------- | --------------------------- |
+| POST   | /analysis/analyze     | Analyze a single ticket     |
+| POST   | /tickets              | Create and analyze a ticket |
+| GET    | /tickets              | Get all analyzed tickets    |
+| GET    | /tickets/:id          | Get one ticket by ID        |
+| POST   | /tickets/bulk-analyze | Analyze all mock tickets    |
 
 ## Why I built this
 
-I spent 5 months working second-level technical support for enterprise automotive clients. Every day I read incident reports in Arabic, French, and English and had to manually identify root causes and write resolutions. I built this tool to automate exactly that process using AI.
+I spent 5 months working second-level technical support for enterprise automotive clients. Every day I read incident reports in multiple languages — and had to identify root causes and write resolutions. I built this tool to automate that process using AI.
