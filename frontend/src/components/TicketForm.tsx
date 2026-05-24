@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import AnalysisResult from './AnalysisResult';
 import { useTicketAnalysis } from './useTicketAnalysis';
 
@@ -29,7 +29,21 @@ function TicketForm() {
     logs: '',
   });
 
+  
+  const ticketIdRef = useRef<HTMLInputElement>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
   const { result, loading, error, analyze } = useTicketAnalysis();
+
+
+  useEffect(() => {
+    ticketIdRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+  if (result) {
+    resultRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }
+}, [result]);
 
   function handleSubmit() {
     analyze({
@@ -49,6 +63,7 @@ function TicketForm() {
           <label style={labelStyle}>Ticket ID</label>
           <input
             style={inputStyle}
+             ref={ticketIdRef} 
             placeholder="TKT-001"
             value={formData.ticket_id}
             onChange={(e) =>
@@ -160,7 +175,10 @@ function TicketForm() {
       )}
 
       {/* result */}
-      {result?.analysis && <AnalysisResult analysis={result.analysis} />}
+      {result?.analysis && (
+        <div ref={resultRef}>
+      <AnalysisResult analysis={result.analysis} />
+      </div>) }
     </div>
   );
 }

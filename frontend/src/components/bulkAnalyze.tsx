@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { bulkAnalyze } from '../services/api';
 import { Ticket } from '../types';
 import AnalysisResult from './AnalysisResult';
@@ -10,6 +10,24 @@ function BulkAnalyze() {
   const [selected, setSelected] = useState<Ticket | null>(null);
   const [progress, setProgress] = useState(0);
 
+
+  const summary = useMemo(() => {
+  if (tickets.length === 0) return null;
+
+  const byCategory = tickets.reduce((acc, t) => {
+    const cat = t.analysis?.category || 'unknown';
+    acc[cat] = (acc[cat] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const bySeverity = tickets.reduce((acc, t) => {
+    const sev = t.analysis?.severity || 'unknown';
+    acc[sev] = (acc[sev] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+
+  return { byCategory, bySeverity };
+}, [tickets]);
   async function handleBulkAnalyze() {
     setLoading(true);
     setError(null);
@@ -105,7 +123,32 @@ function BulkAnalyze() {
           <p style={{ fontSize: '14px', color: '#27ae60', fontWeight: 600, marginBottom: '1rem' }}>
             ✓ {tickets.length} tickets analyzed successfully
           </p>
-
+{summary && (
+  <div style={{
+    display: 'flex',
+    gap: '1rem',
+    marginBottom: '1.5rem',
+    flexWrap: 'wrap',
+  }}>
+    {Object.entries(summary.bySeverity).map(([severity, count]) => (
+      <div key={severity} style={{
+        padding: '8px 16px',
+        borderRadius: '6px',
+        backgroundColor: {
+          low: '#27ae60',
+          medium: '#f39c12',
+          high: '#e67e22',
+          critical: '#e74c3c',
+        }[severity] || '#7f8c8d',
+        color: 'white',
+        fontSize: '13px',
+        fontWeight: 600,
+      }}>
+        {severity}: {count}
+      </div>
+    ))}
+  </div>
+)}
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
             <thead>
               <tr style={{ borderBottom: '2px solid #e0e0e0' }}>
