@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import TicketForm from './components/TicketForm';
 import TicketList from './components/TicketList';
 import BulkAnalyze from './components/bulkAnalyze';
+import { useTheme } from './context/ThemeContext';
 
 type Screen = 'analyze' | 'list' | 'bulk';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('analyze');
-
+  const { theme, toggleTheme } = useTheme();
   const tabStyle = (active: boolean): React.CSSProperties => ({
     padding: '8px 20px',
     border: 'none',
@@ -22,12 +23,31 @@ function App() {
   return (
     <div
       style={{
+        backgroundColor: theme === 'light' ? 'white' : '#1a1a1a',
+        color: theme === 'light' ? 'black' : 'white',
+
         maxWidth: '800px',
         margin: '0 auto',
         padding: '2rem 1rem',
         fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, sans-serif',
       }}
     >
+      <button
+        onClick={toggleTheme}
+        style={{
+          padding: '8px 16px',
+          border: '1px solid #e0e0e0',
+          borderRadius: '6px',
+          backgroundColor: theme === 'light' ? '#2c3e50' : '#f0f0f0',
+          color: theme === 'light' ? 'white' : '#2c3e50',
+          fontSize: '13px',
+          fontWeight: 600,
+          cursor: 'pointer',
+        }}
+      >
+        {theme === 'light' ? '🌙 Dark mode' : '☀️ Light mode'}
+      </button>
+
       <div style={{ marginBottom: '1.5rem' }}>
         <h1 style={{ margin: '0 0 4px', fontSize: '24px', color: '#2c3e50' }}>
           Support Ticket Analyzer
