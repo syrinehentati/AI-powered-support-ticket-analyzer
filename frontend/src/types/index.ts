@@ -6,6 +6,13 @@ export interface TicketFormData {
   logs: string[];
 }
 
+export interface SimilarIncident {
+  ticket_id: string;
+  title: string;
+  similarity: number;
+  category: string;
+}
+
 export interface TicketAnalysis {
   summary: string;
   detected_language: string;
@@ -13,8 +20,9 @@ export interface TicketAnalysis {
   resolution: string[];
   category: string;
   severity: string;
+  similar_incidents_used: string[];
+  similar_tickets: SimilarIncident[];
 }
-
 export interface Ticket extends TicketFormData {
   analysis?: TicketAnalysis;
   analyzed_at?: string;

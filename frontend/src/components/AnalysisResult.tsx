@@ -65,6 +65,72 @@ function AnalysisResult({ analysis }: Props) {
           ))}
         </ol>
       </div>
+      {analysis.similar_tickets && analysis.similar_tickets.length > 0 && (
+  <div className={styles.section}>
+    <h3 className={styles.sectionTitle}>
+      Informed by similar past incidents
+    </h3>
+    {analysis.similar_tickets.map((ticket) => (
+      <div key={ticket.ticket_id} style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '8px',
+      }}>
+        <span style={{
+          fontSize: '12px',
+          color: '#666',
+          minWidth: '80px',
+        }}>
+          {ticket.ticket_id}
+        </span>
+        <span style={{
+          fontSize: '13px',
+          flex: 1,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}>
+          {ticket.title}
+        </span>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          minWidth: '140px',
+        }}>
+          <div style={{
+            flex: 1,
+            height: '6px',
+            backgroundColor: '#e0e0e0',
+            borderRadius: '3px',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              width: `${ticket.similarity}%`,
+              height: '100%',
+              backgroundColor: ticket.similarity >= 80
+                ? '#27ae60'
+                : ticket.similarity >= 60
+                ? '#f39c12'
+                : '#e67e22',
+              borderRadius: '3px',
+            }} />
+          </div>
+          <span style={{
+            fontSize: '12px',
+            fontWeight: 600,
+            color: '#666',
+            minWidth: '36px',
+          }}>
+            {ticket.similarity}%
+          </span>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+      
     </div>
   );
 }
