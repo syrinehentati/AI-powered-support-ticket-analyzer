@@ -3,6 +3,8 @@ import TicketForm from './components/TicketForm';
 import TicketList from './components/TicketList';
 import BulkAnalyze from './components/bulkAnalyze';
 import { useTheme } from './context/ThemeContext';
+import ErrorBoundary from './components/ErrorBoundary';
+
 
 type Screen = 'analyze' | 'list' | 'bulk';
 
@@ -108,9 +110,21 @@ function App() {
           </button>
         </div>
 
-        {screen === 'analyze' && <TicketForm />}
-        {screen === 'list' && <TicketList />}
-        {screen === 'bulk' && <BulkAnalyze />}
+        {screen === 'analyze' && (
+  <ErrorBoundary>
+    <TicketForm />
+  </ErrorBoundary>
+)}
+{screen === 'list' && (
+  <ErrorBoundary>
+    <TicketList />
+  </ErrorBoundary>
+)}
+{screen === 'bulk' && (
+  <ErrorBoundary>
+    <BulkAnalyze />
+  </ErrorBoundary>
+)}
       </div>
     </div>
   );

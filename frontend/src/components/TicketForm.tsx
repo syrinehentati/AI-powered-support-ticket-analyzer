@@ -20,6 +20,10 @@ const labelStyle: React.CSSProperties = {
   color: '#333',
 };
 
+function CrashingComponent() {
+  throw new Error('Test render crash');
+  return <div>never renders</div>;
+}
 function TicketForm() {
   const [formData, setFormData] = useState({
     ticket_id: '',
@@ -29,21 +33,19 @@ function TicketForm() {
     logs: '',
   });
 
-  
   const ticketIdRef = useRef<HTMLInputElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const { result, loading, error, analyze } = useTicketAnalysis();
-
 
   useEffect(() => {
     ticketIdRef.current?.focus();
   }, []);
 
   useEffect(() => {
-  if (result) {
-    resultRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }
-}, [result]);
+    if (result) {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [result]);
 
   function handleSubmit() {
     analyze({
@@ -63,7 +65,7 @@ function TicketForm() {
           <label style={labelStyle}>Ticket ID</label>
           <input
             style={inputStyle}
-             ref={ticketIdRef} 
+            ref={ticketIdRef}
             placeholder="TKT-001"
             value={formData.ticket_id}
             onChange={(e) =>
@@ -95,9 +97,7 @@ function TicketForm() {
           style={inputStyle}
           placeholder="Brief description of the issue"
           value={formData.title}
-          onChange={(e) =>
-            setFormData({ ...formData, title: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
         />
       </div>
 
@@ -132,9 +132,7 @@ function TicketForm() {
           }}
           placeholder={`2026-05-14 07:32:11 ERROR AuthService - JWT validation failed\n2026-05-14 07:32:12 WARN RateLimiter - 14 failed attempts`}
           value={formData.logs}
-          onChange={(e) =>
-            setFormData({ ...formData, logs: e.target.value })
-          }
+          onChange={(e) => setFormData({ ...formData, logs: e.target.value })}
         />
       </div>
 
@@ -177,8 +175,9 @@ function TicketForm() {
       {/* result */}
       {result?.analysis && (
         <div ref={resultRef}>
-      <AnalysisResult analysis={result.analysis} />
-      </div>) }
+          <AnalysisResult analysis={result.analysis} />
+        </div>
+      )}
     </div>
   );
 }
