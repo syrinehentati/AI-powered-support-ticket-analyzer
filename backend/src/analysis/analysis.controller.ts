@@ -11,7 +11,8 @@ export class AnalysisController {
     return this.analysisService.analyzeTicket(
       body.title,
       body.description,
-      body.logs
+      body.logs,
+      body.temperature,
     );
   }
 }

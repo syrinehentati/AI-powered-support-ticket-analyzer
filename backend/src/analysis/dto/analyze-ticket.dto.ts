@@ -1,4 +1,4 @@
-import { IsString, IsArray, ArrayNotEmpty, IsNotEmpty } from 'class-validator';
+import { IsString, IsArray, ArrayNotEmpty, IsNotEmpty, IsOptional, Min, Max, IsNumber } from 'class-validator';
 
 export class AnalyzeTicketDto {
   @IsString()
@@ -12,4 +12,10 @@ export class AnalyzeTicketDto {
   @IsArray()
   @ArrayNotEmpty()
   logs!: string[];
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Max(1)
+  temperature?: number;
 }

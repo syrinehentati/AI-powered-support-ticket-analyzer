@@ -5,9 +5,18 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 export class AnalysisService {
   private genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
-  async analyzeTicket(title: string, description: string, logs: string[]) {
-    const model = this.genAI.getGenerativeModel({ 
-   model: 'gemini-3-flash-preview'
+  async analyzeTicket(
+    title: string,
+    description: string,
+    logs: string[],
+    temperature: number = 0.3
+  ) {
+    const model = this.genAI.getGenerativeModel({
+      model: 'gemini-3-flash-preview',
+      generationConfig: {
+        temperature,
+        responseMimeType: 'application/json',
+      },
     });
 
     const prompt = `

@@ -31,6 +31,7 @@ function TicketForm() {
     description: '',
     severity: 'medium',
     logs: '',
+    temperature: 0.2,
   });
 
   const ticketIdRef = useRef<HTMLInputElement>(null);
@@ -135,7 +136,47 @@ function TicketForm() {
           onChange={(e) => setFormData({ ...formData, logs: e.target.value })}
         />
       </div>
-
+{/* temperature slider */}
+<div style={{ marginBottom: '1.5rem' }}>
+  <label style={labelStyle}>
+    AI Temperature
+    <span style={{ fontWeight: 400, color: '#999', marginLeft: '8px' }}>
+      {formData.temperature === 0
+        ? 'fully deterministic'
+        : formData.temperature <= 0.3
+        ? 'consistent and precise'
+        : formData.temperature <= 0.6
+        ? 'balanced'
+        : formData.temperature <= 0.8
+        ? 'creative'
+        : 'highly creative'}
+    </span>
+  </label>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+    <span style={{ fontSize: '12px', color: '#999' }}>0.0</span>
+    <input
+      type="range"
+      min="0"
+      max="1"
+      step="0.1"
+      value={formData.temperature}
+      onChange={(e) =>
+        setFormData({ ...formData, temperature: parseFloat(e.target.value) })
+      }
+      style={{ flex: 1 }}
+    />
+    <span style={{ fontSize: '12px', color: '#999' }}>1.0</span>
+    <span style={{
+      minWidth: '32px',
+      fontSize: '13px',
+      fontWeight: 600,
+      color: '#2c3e50',
+      textAlign: 'right',
+    }}>
+      {formData.temperature.toFixed(1)}
+    </span>
+  </div>
+</div>
       {/* submit button */}
       <button
         onClick={handleSubmit}

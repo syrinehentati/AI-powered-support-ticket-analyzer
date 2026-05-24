@@ -19,7 +19,8 @@ export class TicketsService {
         const analysis = await this.analysisService.analyzeTicket(
             dto.title,
             dto.description,
-            dto.logs
+            dto.logs,
+             dto.temperature,
         );
 
         const ticket: Ticket = {
