@@ -1,5 +1,9 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { bulkAnalyze } from '../services/api';
+import {
+  bulkAnalyze,
+  addToKnowledgeBase,
+  getKnowledgeBase,
+} from '../services/api';
 import { Ticket } from '../types';
 import AnalysisResult from './AnalysisResult';
 
@@ -8,8 +12,13 @@ function BulkAnalyze() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Ticket | null>(null);
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
+  const [adding, setAdding] = useState(false);
+  const [existingKBIds, setExistingKBIds] = useState<Set<string>>(new Set());
 
   const isMounted = useRef(true);
+
+  // ─── effects ─────────────────────────────────────────────────
 
   useEffect(() => {
     isMounted.current = true;
@@ -17,17 +26,19 @@ function BulkAnalyze() {
       isMounted.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    getKnowledgeBase()
+      .then((entries) => {
+        setExistingKBIds(new Set(entries.map((e) => e.ticket_id)));
+      })
+      .catch(() => {});
+  }, []);
+
+  // ─── derived values ───────────────────────────────────────────
+
   const summary = useMemo(() => {
     if (tickets.length === 0) return null;
-
-    const byCategory = tickets.reduce(
-      (acc, t) => {
-        const cat = t.analysis?.category || 'unknown';
-        acc[cat] = (acc[cat] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
 
     const bySeverity = tickets.reduce(
       (acc, t) => {
@@ -38,38 +49,96 @@ function BulkAnalyze() {
       {} as Record<string, number>
     );
 
-    return { byCategory, bySeverity };
+    return { bySeverity };
   }, [tickets]);
+
+  const selectedCount = checkedIds.size;
+  const alreadyAddedCount = [...checkedIds].filter((id) =>
+    existingKBIds.has(id)
+  ).length;
+  const newToAddCount = selectedCount - alreadyAddedCount;
+
+  // ─── handlers ─────────────────────────────────────────────────
+
   async function handleBulkAnalyze() {
     setLoading(true);
     setError(null);
     setTickets([]);
     setSelected(null);
+    setCheckedIds(new Set());
 
     try {
       const results = await bulkAnalyze();
-
-      // only update state if component is still on screen
-      if (isMounted.current) {
-        setTickets(results);
-      }
+      if (isMounted.current) setTickets(results);
     } catch (err: any) {
-      if (isMounted.current) {
+      if (isMounted.current)
         setError('Bulk analyze failed. Make sure the backend is running.');
-      }
     } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
+      if (isMounted.current) setLoading(false);
     }
   }
+
+  function toggleCheck(ticketId: string) {
+    setCheckedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(ticketId)) {
+        next.delete(ticketId);
+      } else {
+        next.add(ticketId);
+      }
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    if (checkedIds.size === tickets.length) {
+      setCheckedIds(new Set());
+    } else {
+      setCheckedIds(new Set(tickets.map((t) => t.ticket_id)));
+    }
+  }
+
+  async function handleAddToKnowledgeBase() {
+    const toAdd = tickets.filter(
+      (t) => checkedIds.has(t.ticket_id) && !existingKBIds.has(t.ticket_id)
+    );
+
+    if (toAdd.length === 0) return;
+
+    setAdding(true);
+
+    for (const ticket of toAdd) {
+      if (!ticket.analysis) continue;
+      try {
+        await addToKnowledgeBase({
+          ticket_id: ticket.ticket_id,
+          title: ticket.title,
+          description: ticket.description,
+          logs: ticket.logs,
+          resolution: ticket.analysis.resolution,
+          category: ticket.analysis.category,
+          severity: ticket.analysis.severity,
+          detected_language: ticket.analysis.detected_language,
+        });
+        // update real source of truth immediately
+        setExistingKBIds((prev) => new Set(prev).add(ticket.ticket_id));
+      } catch (err) {
+        // skip failed ones silently
+      }
+    }
+
+    setCheckedIds(new Set());
+    setAdding(false);
+  }
+
+  // ─── render ───────────────────────────────────────────────────
 
   return (
     <div>
       {/* header */}
       <div style={{ marginBottom: '1.5rem' }}>
         <p style={{ margin: '0 0 1rem', color: '#666', fontSize: '14px' }}>
-          Analyzes all 13 mock tickets at once — English, French, Arabic and
+          Analyzes all mock tickets at once — English, French, Arabic and
           German.
         </p>
         <button
@@ -94,7 +163,7 @@ function BulkAnalyze() {
       {loading && (
         <div style={{ marginBottom: '1.5rem' }}>
           <p style={{ fontSize: '13px', color: '#666', marginBottom: '8px' }}>
-            Processing 13 tickets. This takes about 30 seconds...
+            Processing tickets. This takes about 30 seconds...
           </p>
           <div
             style={{
@@ -141,7 +210,7 @@ function BulkAnalyze() {
         </div>
       )}
 
-      {/* results summary */}
+      {/* results */}
       {tickets.length > 0 && (
         <div>
           <p
@@ -154,6 +223,8 @@ function BulkAnalyze() {
           >
             ✓ {tickets.length} tickets analyzed successfully
           </p>
+
+          {/* severity summary */}
           {summary && (
             <div
               style={{
@@ -170,12 +241,14 @@ function BulkAnalyze() {
                     padding: '8px 16px',
                     borderRadius: '6px',
                     backgroundColor:
-                      {
-                        low: '#27ae60',
-                        medium: '#f39c12',
-                        high: '#e67e22',
-                        critical: '#e74c3c',
-                      }[severity] || '#7f8c8d',
+                      (
+                        {
+                          low: '#27ae60',
+                          medium: '#f39c12',
+                          high: '#e67e22',
+                          critical: '#e74c3c',
+                        } as Record<string, string>
+                      )[severity] || '#7f8c8d',
                     color: 'white',
                     fontSize: '13px',
                     fontWeight: 600,
@@ -186,6 +259,69 @@ function BulkAnalyze() {
               ))}
             </div>
           )}
+
+          {/* knowledge base toolbar */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              marginBottom: '1rem',
+              padding: '10px 12px',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '6px',
+              border: '1px solid #e0e0e0',
+            }}
+          >
+            <span style={{ fontSize: '13px', color: '#666' }}>
+              {selectedCount === 0
+                ? 'Select tickets to add to knowledge base'
+                : `${selectedCount} selected${
+                    newToAddCount > 0
+                      ? ` — ${newToAddCount} new`
+                      : ' — all already in knowledge base'
+                  }`}
+            </span>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+              <button
+                onClick={toggleSelectAll}
+                style={{
+                  padding: '6px 14px',
+                  border: '1px solid #e0e0e0',
+                  borderRadius: '6px',
+                  backgroundColor: 'white',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                }}
+              >
+                {checkedIds.size === tickets.length
+                  ? 'Deselect all'
+                  : 'Select all'}
+              </button>
+              <button
+                onClick={handleAddToKnowledgeBase}
+                disabled={adding || newToAddCount === 0}
+                style={{
+                  padding: '6px 14px',
+                  backgroundColor:
+                    adding || newToAddCount === 0 ? '#bbb' : '#2c3e50',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '6px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor:
+                    adding || newToAddCount === 0 ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {adding
+                  ? 'Adding...'
+                  : `+ Add ${newToAddCount > 0 ? newToAddCount : ''} to Knowledge Base`}
+              </button>
+            </div>
+          </div>
+
+          {/* table */}
           <table
             style={{
               width: '100%',
@@ -195,6 +331,15 @@ function BulkAnalyze() {
           >
             <thead>
               <tr style={{ borderBottom: '2px solid #e0e0e0' }}>
+                <th style={{ padding: '10px 12px', width: '40px' }}>
+                  <input
+                    type="checkbox"
+                    checked={
+                      tickets.length > 0 && checkedIds.size === tickets.length
+                    }
+                    onChange={toggleSelectAll}
+                  />
+                </th>
                 <th
                   style={{
                     textAlign: 'left',
@@ -245,27 +390,60 @@ function BulkAnalyze() {
                 >
                   Severity
                 </th>
+                <th
+                  style={{
+                    textAlign: 'left',
+                    padding: '10px 12px',
+                    color: '#666',
+                    fontWeight: 600,
+                  }}
+                >
+                  KB
+                </th>
               </tr>
             </thead>
             <tbody>
               {tickets.map((ticket) => (
                 <tr
                   key={ticket.ticket_id}
-                  onClick={() =>
-                    setSelected(
-                      selected?.ticket_id === ticket.ticket_id ? null : ticket
-                    )
-                  }
                   style={{
                     borderBottom: '1px solid #f0f0f0',
-                    cursor: 'pointer',
                     backgroundColor:
                       selected?.ticket_id === ticket.ticket_id
                         ? '#f8f9fa'
                         : 'transparent',
                   }}
                 >
-                  <td style={{ padding: '12px' }}>{ticket.ticket_id}</td>
+                  {/* checkbox */}
+                  <td
+                    style={{ padding: '12px', width: '40px' }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checkedIds.has(ticket.ticket_id)}
+                      onChange={() => toggleCheck(ticket.ticket_id)}
+                    />
+                  </td>
+
+                  {/* id */}
+                  <td
+                    style={{
+                      padding: '12px',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      color: '#666',
+                    }}
+                    onClick={() =>
+                      setSelected(
+                        selected?.ticket_id === ticket.ticket_id ? null : ticket
+                      )
+                    }
+                  >
+                    {ticket.ticket_id}
+                  </td>
+
+                  {/* title */}
                   <td
                     style={{
                       padding: '12px',
@@ -273,16 +451,28 @@ function BulkAnalyze() {
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
+                      cursor: 'pointer',
                     }}
+                    onClick={() =>
+                      setSelected(
+                        selected?.ticket_id === ticket.ticket_id ? null : ticket
+                      )
+                    }
                   >
                     {ticket.title}
                   </td>
+
+                  {/* language */}
                   <td style={{ padding: '12px' }}>
                     {ticket.analysis?.detected_language || '—'}
                   </td>
+
+                  {/* category */}
                   <td style={{ padding: '12px' }}>
                     {ticket.analysis?.category || '—'}
                   </td>
+
+                  {/* severity */}
                   <td style={{ padding: '12px' }}>
                     <span
                       style={{
@@ -292,12 +482,14 @@ function BulkAnalyze() {
                         fontWeight: 600,
                         color: 'white',
                         backgroundColor:
-                          {
-                            low: '#27ae60',
-                            medium: '#f39c12',
-                            high: '#e67e22',
-                            critical: '#e74c3c',
-                          }[ticket.analysis?.severity || ticket.severity] ||
+                          (
+                            {
+                              low: '#27ae60',
+                              medium: '#f39c12',
+                              high: '#e67e22',
+                              critical: '#e74c3c',
+                            } as Record<string, string>
+                          )[ticket.analysis?.severity || ticket.severity] ||
                           '#7f8c8d',
                       }}
                     >
@@ -306,11 +498,29 @@ function BulkAnalyze() {
                       ).toUpperCase()}
                     </span>
                   </td>
+
+                  {/* kb status */}
+                  <td style={{ padding: '12px' }}>
+                    {existingKBIds.has(ticket.ticket_id) ? (
+                      <span
+                        style={{
+                          fontSize: '12px',
+                          color: '#27ae60',
+                          fontWeight: 600,
+                        }}
+                      >
+                        ✓ Added
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: '12px', color: '#ccc' }}>—</span>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
 
+          {/* selected ticket detail */}
           {selected?.analysis && (
             <div style={{ marginTop: '1.5rem' }}>
               <h3

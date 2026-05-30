@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AnalysisResult from './AnalysisResult';
 import { useTicketAnalysis } from './useTicketAnalysis';
+import { getAllTickets } from '../services/api';
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -20,10 +21,6 @@ const labelStyle: React.CSSProperties = {
   color: '#333',
 };
 
-function CrashingComponent() {
-  throw new Error('Test render crash');
-  return <div>never renders</div>;
-}
 function TicketForm() {
   const [formData, setFormData] = useState({
     ticket_id: '',
@@ -34,21 +31,45 @@ function TicketForm() {
     temperature: 0.2,
   });
 
+  const [ticketIdError, setTicketIdError] = useState<string | null>(null);
+  const [existingTicketIds, setExistingTicketIds] = useState<Set<string>>(
+    new Set()
+  );
+
+
+  
   const ticketIdRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+  const logsRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
+
   const { result, loading, error, analyze } = useTicketAnalysis();
+  
+ // ─── effects ────────────────────────────────
+useEffect(() => {
+  // fetch existing ticket ids on mount
+  getAllTickets()
+    .then((tickets) => {
+      setExistingTicketIds(new Set(tickets.map((t) => t.ticket_id)));
+    })
+    .catch(() => {});
+}, []);
 
-  useEffect(() => {
-    ticketIdRef.current?.focus();
-  }, []);
+useEffect(() => {
+  // auto focus ticket id on load
+  ticketIdRef.current?.focus();
+}, []);
 
-  useEffect(() => {
-    if (result) {
-      resultRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [result]);
+useEffect(() => {
+  // scroll to result and register new ticket id
+  if (result) {
+    resultRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setExistingTicketIds((prev) => new Set(prev).add(result.ticket_id));
+  }
+}, [result]);
 
-  function handleSubmit() {
+  const handleSubmit = useCallback(() => {
     analyze({
       ...formData,
       logs: formData.logs
@@ -56,7 +77,7 @@ function TicketForm() {
         .map((l) => l.trim())
         .filter((l) => l.length > 0),
     });
-  }
+  }, [formData, analyze]);
 
   return (
     <div>
@@ -65,14 +86,42 @@ function TicketForm() {
         <div style={{ flex: 1 }}>
           <label style={labelStyle}>Ticket ID</label>
           <input
-            style={inputStyle}
             ref={ticketIdRef}
+            style={{
+              ...inputStyle,
+              borderColor: ticketIdError ? '#e74c3c' : '#ddd',
+            }}
             placeholder="TKT-001"
             value={formData.ticket_id}
-            onChange={(e) =>
-              setFormData({ ...formData, ticket_id: e.target.value })
-            }
+            onChange={(e) => {
+              setFormData({ ...formData, ticket_id: e.target.value });
+              // clear error as user types
+              if (ticketIdError) setTicketIdError(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                if (existingTicketIds.has(formData.ticket_id)) {
+                  setTicketIdError('Ticket ID already exists');
+                  return; // do not move to next field
+                }
+                titleRef.current?.focus();
+              }
+            }}
           />
+
+          {/* show error below the field */}
+          {ticketIdError && (
+            <p
+              style={{
+                margin: '4px 0 0',
+                fontSize: '12px',
+                color: '#e74c3c',
+              }}
+            >
+              {ticketIdError}
+            </p>
+          )}
         </div>
         <div style={{ flex: 1 }}>
           <label style={labelStyle}>Severity</label>
@@ -95,10 +144,17 @@ function TicketForm() {
       <div style={{ marginBottom: '1rem' }}>
         <label style={labelStyle}>Title</label>
         <input
+          ref={titleRef}
           style={inputStyle}
           placeholder="Brief description of the issue"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              descriptionRef.current?.focus();
+            }
+          }}
         />
       </div>
 
@@ -106,12 +162,19 @@ function TicketForm() {
       <div style={{ marginBottom: '1rem' }}>
         <label style={labelStyle}>Description</label>
         <textarea
+          ref={descriptionRef}
           style={{ ...inputStyle, height: '100px', resize: 'vertical' }}
           placeholder="Detailed description of the problem..."
           value={formData.description}
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
           }
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+              e.preventDefault();
+              logsRef.current?.focus();
+            }
+          }}
         />
       </div>
 
@@ -120,10 +183,11 @@ function TicketForm() {
         <label style={labelStyle}>
           Logs
           <span style={{ fontWeight: 400, color: '#999', marginLeft: '8px' }}>
-            one log line per line
+            one log line per line · Ctrl+Enter to submit
           </span>
         </label>
         <textarea
+          ref={logsRef}
           style={{
             ...inputStyle,
             height: '120px',
@@ -134,49 +198,62 @@ function TicketForm() {
           placeholder={`2026-05-14 07:32:11 ERROR AuthService - JWT validation failed\n2026-05-14 07:32:12 WARN RateLimiter - 14 failed attempts`}
           value={formData.logs}
           onChange={(e) => setFormData({ ...formData, logs: e.target.value })}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+              e.preventDefault();
+              handleSubmit();
+            }
+          }}
         />
       </div>
-{/* temperature slider */}
-<div style={{ marginBottom: '1.5rem' }}>
-  <label style={labelStyle}>
-    AI Temperature
-    <span style={{ fontWeight: 400, color: '#999', marginLeft: '8px' }}>
-      {formData.temperature === 0
-        ? 'fully deterministic'
-        : formData.temperature <= 0.3
-        ? 'consistent and precise'
-        : formData.temperature <= 0.6
-        ? 'balanced'
-        : formData.temperature <= 0.8
-        ? 'creative'
-        : 'highly creative'}
-    </span>
-  </label>
-  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-    <span style={{ fontSize: '12px', color: '#999' }}>0.0</span>
-    <input
-      type="range"
-      min="0"
-      max="1"
-      step="0.1"
-      value={formData.temperature}
-      onChange={(e) =>
-        setFormData({ ...formData, temperature: parseFloat(e.target.value) })
-      }
-      style={{ flex: 1 }}
-    />
-    <span style={{ fontSize: '12px', color: '#999' }}>1.0</span>
-    <span style={{
-      minWidth: '32px',
-      fontSize: '13px',
-      fontWeight: 600,
-      color: '#2c3e50',
-      textAlign: 'right',
-    }}>
-      {formData.temperature.toFixed(1)}
-    </span>
-  </div>
-</div>
+
+      {/* temperature slider */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <label style={labelStyle}>
+          AI Temperature
+          <span style={{ fontWeight: 400, color: '#999', marginLeft: '8px' }}>
+            {formData.temperature === 0
+              ? 'fully deterministic'
+              : formData.temperature <= 0.3
+                ? 'consistent and precise'
+                : formData.temperature <= 0.6
+                  ? 'balanced'
+                  : formData.temperature <= 0.8
+                    ? 'creative'
+                    : 'highly creative'}
+          </span>
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ fontSize: '12px', color: '#999' }}>0.0</span>
+          <input
+            type="range"
+            min="0"
+            max="1"
+            step="0.1"
+            value={formData.temperature}
+            onChange={(e) =>
+              setFormData({
+                ...formData,
+                temperature: parseFloat(e.target.value),
+              })
+            }
+            style={{ flex: 1 }}
+          />
+          <span style={{ fontSize: '12px', color: '#999' }}>1.0</span>
+          <span
+            style={{
+              minWidth: '32px',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: '#2c3e50',
+              textAlign: 'right',
+            }}
+          >
+            {formData.temperature.toFixed(1)}
+          </span>
+        </div>
+      </div>
+
       {/* submit button */}
       <button
         onClick={handleSubmit}
@@ -215,21 +292,21 @@ function TicketForm() {
 
       {/* result */}
       {result?.analysis && (
-  <div ref={resultRef}>
-    <AnalysisResult
-      analysis={result.analysis}
-      ticketData={{
-        ticket_id: formData.ticket_id,
-        title: formData.title,
-        description: formData.description,
-        logs: formData.logs
-          .split('\n')
-          .map((l) => l.trim())
-          .filter((l) => l.length > 0),
-      }}
-    />
-  </div>
-)}
+        <div ref={resultRef}>
+          <AnalysisResult
+            analysis={result.analysis}
+            ticketData={{
+              ticket_id: formData.ticket_id,
+              title: formData.title,
+              description: formData.description,
+              logs: formData.logs
+                .split('\n')
+                .map((l) => l.trim())
+                .filter((l) => l.length > 0),
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }
