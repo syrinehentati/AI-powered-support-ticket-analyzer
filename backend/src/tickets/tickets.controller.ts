@@ -18,7 +18,7 @@ export class TicketsController {
 
     @Post()
     create (@Body() body: CreateTicketDto){
-        return this.ticketsService.createAndAnlayze(body);
+        return this.ticketsService.createAndAnalyze(body);
     }
 
     @Post('bulk-analyze')
