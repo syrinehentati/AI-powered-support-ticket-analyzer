@@ -27,3 +27,26 @@ export interface Ticket extends TicketFormData {
   analysis?: TicketAnalysis;
   analyzed_at?: string;
 }
+export interface KnowledgeBaseEntry {
+  id: string;
+  ticket_id: string;
+  title: string;
+  description: string;
+  logs: string[];
+  resolution: string[];
+  category: string;
+  severity: string;
+  detected_language: string;
+  created_at: string;
+}
+
+export interface AddToKnowledgeBasePayload {
+  ticket_id: string;
+  title: string;
+  description: string;
+  logs: string[];
+  resolution: string[];
+  category: string;
+  severity: string;
+  detected_language: string;
+}

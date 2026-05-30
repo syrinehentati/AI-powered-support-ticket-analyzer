@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { Ticket, TicketFormData } from "../types";
-import { analyzeTicket } from "../services/api";
-
+import { useState } from 'react';
+import { Ticket, TicketFormData } from '../types';
+import { analyzeTicket } from '../services/api';
 
 export function useTicketAnalysis() {
   const [result, setResult] = useState<Ticket | null>(null);
@@ -15,7 +14,7 @@ export function useTicketAnalysis() {
       const ticket = await analyzeTicket(data);
       setResult(ticket);
     } catch (err: any) {
-      setError(err.response?.data?.message?.join(', ') || 'Something went wrong');
+      setError(err.message);
     } finally {
       setLoading(false);
     }

@@ -4,9 +4,10 @@ import TicketList from './components/TicketList';
 import BulkAnalyze from './components/bulkAnalyze';
 import { useTheme } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import KnowledgeBase from './components/knowledgeBase';
 
 
-type Screen = 'analyze' | 'list' | 'bulk';
+type Screen = 'analyze' | 'list' | 'bulk' | 'knowledge';
 
 function App() {
   const [screen, setScreen] = useState<Screen>('analyze');
@@ -108,6 +109,13 @@ function App() {
           >
             Bulk Analyze
           </button>
+          <button
+  style={tabStyle(screen === 'knowledge')}
+  onClick={() => setScreen('knowledge')}
+>
+  Knowledge Base
+</button>
+
         </div>
 
         {screen === 'analyze' && (
@@ -123,6 +131,11 @@ function App() {
 {screen === 'bulk' && (
   <ErrorBoundary>
     <BulkAnalyze />
+  </ErrorBoundary>
+)}
+{screen === 'knowledge' && (
+  <ErrorBoundary>
+    <KnowledgeBase />
   </ErrorBoundary>
 )}
       </div>

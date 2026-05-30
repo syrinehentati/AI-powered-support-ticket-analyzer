@@ -215,10 +215,21 @@ function TicketForm() {
 
       {/* result */}
       {result?.analysis && (
-        <div ref={resultRef}>
-          <AnalysisResult analysis={result.analysis} />
-        </div>
-      )}
+  <div ref={resultRef}>
+    <AnalysisResult
+      analysis={result.analysis}
+      ticketData={{
+        ticket_id: formData.ticket_id,
+        title: formData.title,
+        description: formData.description,
+        logs: formData.logs
+          .split('\n')
+          .map((l) => l.trim())
+          .filter((l) => l.length > 0),
+      }}
+    />
+  </div>
+)}
     </div>
   );
 }
