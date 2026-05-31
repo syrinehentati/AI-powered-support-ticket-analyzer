@@ -1,78 +1,89 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AnalysisService } from '../analysis/analysis.service';
-import { Ticket } from './ticket.interface';
 import { CreateTicketDto } from './dto/create-ticket.dto';
+import { TicketEntity } from './ticket.entity';
+
 @Injectable()
 export class TicketsService {
-  private tickets: Ticket[] = [];
-  constructor(private readonly analysisService: AnalysisService) {}
+  constructor(
+    @InjectRepository(TicketEntity)
+    private ticketRepository: Repository<TicketEntity>,
+    private readonly analysisService: AnalysisService,
+  ) {}
 
-  findAll() {
-    return this.tickets;
+  findAll(): Promise<TicketEntity[]> {
+    return this.ticketRepository.find({
+      order: { analyzed_at: 'DESC' },
+    });
   }
 
-  findOne(id: string) {
-    return this.tickets.find((t) => t.ticket_id === id);
+  findOne(id: string): Promise<TicketEntity | null> {
+    return this.ticketRepository.findOne({
+      where: { ticket_id: id },
+    });
   }
 
-  async createAndAnalyze(dto: CreateTicketDto): Promise<Ticket> {
-    const existing = this.tickets.find((t) => t.ticket_id === dto.ticket_id);
-    if (existing) {
-      return existing;
-    }
+  async createAndAnalyze(dto: CreateTicketDto): Promise<TicketEntity> {
+    // check for duplicate
+    const existing = await this.ticketRepository.findOne({
+      where: { ticket_id: dto.ticket_id },
+    });
+    if (existing) return existing;
+
     const analysis = await this.analysisService.analyzeTicket(
       dto.title,
       dto.description,
       dto.logs,
-      dto.temperature
+      dto.temperature,
     );
 
-    const ticket: Ticket = {
+    const ticket = this.ticketRepository.create({
       ...dto,
       analysis,
-      analyzed_at: new Date(),
-    };
+    });
 
-    this.tickets.push(ticket);
-    return ticket;
+    return this.ticketRepository.save(ticket);
   }
 
-  async analyzeBulk(): Promise<Ticket[]> {
+  async analyzeBulk(): Promise<TicketEntity[]> {
     const fs = require('fs');
     const path = require('path');
     const filePath = path.join(__dirname, '../../../', 'mock_tickets.json');
     const raw = fs.readFileSync(filePath, 'utf8');
-    const mockTickets = JSON.parse(raw);
+    const mockTickets: CreateTicketDto[] = JSON.parse(raw);
 
-    const results: Ticket[] = [];
+    const results: TicketEntity[] = [];
 
     for (const ticket of mockTickets) {
-      const existing = this.tickets.find(
-        (t) => t.ticket_id === ticket.ticket_id
-      );
+      // check for duplicate
+      const existing = await this.ticketRepository.findOne({
+        where: { ticket_id: ticket.ticket_id },
+      });
       if (existing) {
         results.push(existing);
         continue;
       }
 
-      // this line was missing
       const analysis = await this.analysisService.analyzeTicket(
         ticket.title,
         ticket.description,
-        ticket.logs
+        ticket.logs,
       );
 
-      const analyzed: Ticket = {
+      const entity = this.ticketRepository.create({
         ...ticket,
         analysis,
-        analyzed_at: new Date(),
-      };
+      });
 
-      this.tickets.push(analyzed);
-      results.push(analyzed);
+      const saved = await this.ticketRepository.save(entity);
+      results.push(saved);
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
+
     return results;
   }
 }
+ 

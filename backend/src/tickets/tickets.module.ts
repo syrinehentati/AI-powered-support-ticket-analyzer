@@ -1,11 +1,16 @@
 import { Module } from '@nestjs/common';
-import { TicketsService } from './tickets.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { TicketsController } from './tickets.controller';
-import { AnalysisModule } from 'src/analysis/analysis.module';
+import { TicketsService } from './tickets.service';
+import { AnalysisModule } from '../analysis/analysis.module';
+import { TicketEntity } from './ticket.entity';
 
 @Module({
-  imports: [AnalysisModule],
+  imports: [
+    TypeOrmModule.forFeature([TicketEntity]),
+    AnalysisModule,
+  ],
   controllers: [TicketsController],
-  providers: [ TicketsService],
+  providers: [TicketsService],
 })
 export class TicketsModule {}

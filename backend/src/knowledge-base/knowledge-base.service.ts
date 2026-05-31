@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { EmbeddingService } from './embedding.service';
-import { KnowledgeBaseEntry, SimilarTicket } from './knowledge-base.interface';
-import { v4 as uuidv4 } from 'uuid';
+import { KnowledgeBaseEntity } from './knowledge-base.entity';
 
 @Injectable()
 export class KnowledgeBaseService {
-  private entries: KnowledgeBaseEntry[] = [];
-
-  constructor(private readonly embeddingService: EmbeddingService) {}
+  constructor(
+    @InjectRepository(KnowledgeBaseEntity)
+    private kbRepository: Repository<KnowledgeBaseEntity>,
+    private readonly embeddingService: EmbeddingService,
+  ) {}
 
   async addEntry(
     ticket_id: string,
@@ -18,17 +21,21 @@ export class KnowledgeBaseService {
     category: string,
     severity: string,
     detected_language: string,
-  ): Promise<KnowledgeBaseEntry> {
-    // generate embedding from ticket text
+  ): Promise<KnowledgeBaseEntity> {
+    // check for duplicate
+    const existing = await this.kbRepository.findOne({
+      where: { ticket_id },
+    });
+    if (existing) return existing;
+
     const text = this.embeddingService.prepareTicketText(
       title,
       description,
-      logs
+      logs,
     );
     const embedding = await this.embeddingService.generateEmbedding(text);
 
-    const entry: KnowledgeBaseEntry = {
-      id: uuidv4(),
+    const entry = this.kbRepository.create({
       ticket_id,
       title,
       description,
@@ -38,11 +45,9 @@ export class KnowledgeBaseService {
       severity,
       detected_language,
       embedding,
-      created_at: new Date(),
-    };
+    });
 
-    this.entries.push(entry);
-    return entry;
+    return this.kbRepository.save(entry);
   }
 
   async findSimilar(
@@ -51,39 +56,39 @@ export class KnowledgeBaseService {
     logs: string[],
     topK: number = 3,
     threshold: number = 0.6,
-  ): Promise<SimilarTicket[]> {
-    if (this.entries.length === 0) return [];
+  ) {
+    const entries = await this.kbRepository.find();
+    if (entries.length === 0) return [];
 
-    // generate embedding for the new ticket
     const text = this.embeddingService.prepareTicketText(
       title,
       description,
-      logs
+      logs,
     );
     const queryEmbedding =
       await this.embeddingService.generateEmbedding(text);
 
-    // calculate similarity against all stored entries
-    const similarities = this.entries.map((entry) => ({
+    const similarities = entries.map((entry) => ({
       entry,
       similarity: this.embeddingService.cosineSimilarity(
         queryEmbedding,
-        entry.embedding
+        entry.embedding,
       ),
     }));
 
-    // sort by similarity, filter by threshold, take topK
     return similarities
       .filter((s) => s.similarity >= threshold)
       .sort((a, b) => b.similarity - a.similarity)
       .slice(0, topK);
   }
 
-  getAll(): KnowledgeBaseEntry[] {
-    return this.entries;
+  getAll(): Promise<KnowledgeBaseEntity[]> {
+    return this.kbRepository.find({
+      order: { created_at: 'DESC' },
+    });
   }
 
-  getCount(): number {
-    return this.entries.length;
+  getCount(): Promise<number> {
+    return this.kbRepository.count();
   }
 }
