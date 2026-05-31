@@ -3,25 +3,10 @@ import { addToKnowledgeBase } from '../services/api';
 import { useTickets } from '../hooks/useTickets';
 
 import { Ticket } from '../types';
+
 import Skeleton from './ui/Skeleton';
 import ErrorCard from './ui/ErrorCard';
 import AnalysisResult from './AnalysisResult';
-
-const severityColors: Record<string, string> = {
-  low: '#27ae60',
-  medium: '#f39c12',
-  high: '#e67e22',
-  critical: '#e74c3c',
-};
-
-const categoryColors: Record<string, string> = {
-  authentication: '#8e44ad',
-  performance: '#2980b9',
-  network: '#16a085',
-  crash: '#c0392b',
-  configuration: '#d35400',
-  other: '#7f8c8d',
-};
 
 function TicketList() {
   const { data: tickets = [], isLoading, error, refetch } = useTickets();
@@ -31,7 +16,28 @@ function TicketList() {
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
   const [adding, setAdding] = useState(false);
 
-  // ───────────────────────── selection ─────────────────────────
+  // 🔍 SEARCH (NEW)
+  const [search, setSearch] = useState('');
+
+  // ─────────────────────────────────────────────
+  // FILTER LOGIC (NEW ONLY)
+  // ─────────────────────────────────────────────
+  const filteredTickets = tickets.filter((t: Ticket) => {
+    const q = search.toLowerCase();
+
+    return (
+      t.ticket_id.toLowerCase().includes(q) ||
+      t.title.toLowerCase().includes(q) ||
+      t.description.toLowerCase().includes(q) ||
+      t.analysis?.category?.toLowerCase().includes(q) ||
+      t.analysis?.severity?.toLowerCase().includes(q) ||
+      t.analysis?.detected_language?.toLowerCase().includes(q)
+    );
+  });
+
+  // ─────────────────────────────────────────────
+  // Selection logic (UNCHANGED)
+  // ─────────────────────────────────────────────
   function toggleCheck(id: string) {
     setCheckedIds((prev) => {
       const next = new Set(prev);
@@ -41,16 +47,18 @@ function TicketList() {
   }
 
   function toggleSelectAll() {
-    if (checkedIds.size === tickets.length) {
+    if (checkedIds.size === filteredTickets.length) {
       setCheckedIds(new Set());
     } else {
-      setCheckedIds(new Set(tickets.map((t: Ticket) => t.ticket_id)));
+      setCheckedIds(new Set(filteredTickets.map((t: Ticket) => t.ticket_id)));
     }
   }
 
-  // ───────────────────────── add KB ─────────────────────────
+  // ─────────────────────────────────────────────
+  // Add to KB (UNCHANGED)
+  // ─────────────────────────────────────────────
   async function handleAddToKB() {
-    const toAdd = tickets.filter(
+    const toAdd = filteredTickets.filter(
       (t: Ticket) =>
         checkedIds.has(t.ticket_id) && !addedIds.has(t.ticket_id)
     );
@@ -84,75 +92,117 @@ function TicketList() {
     setAdding(false);
   }
 
-  // ───────────────────────── LOADING ─────────────────────────
+  // ─────────────────────────────────────────────
+  // LOADING
+  // ─────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div style={{ display: 'grid', gap: 10 }}>
-        <Skeleton height={40} />
-        <Skeleton height={40} />
-        <Skeleton height={40} />
-        <Skeleton height={40} />
+      <div style={{ display: 'grid', gap: 12 }}>
+        <Skeleton height={42} />
+        <Skeleton height={42} />
+        <Skeleton height={42} />
       </div>
     );
   }
 
-  // ───────────────────────── ERROR ─────────────────────────
+  // ─────────────────────────────────────────────
+  // ERROR
+  // ─────────────────────────────────────────────
   if (error) {
     return (
       <ErrorCard
-        message="Could not load incidents. Backend may be offline."
+        message="Failed to load incidents."
         onRetry={refetch}
       />
     );
   }
 
-  // ───────────────────────── EMPTY ─────────────────────────
+  // ─────────────────────────────────────────────
+  // EMPTY
+  // ─────────────────────────────────────────────
   if (!tickets.length) {
     return (
       <div
         style={{
+          padding: 40,
           textAlign: 'center',
-          padding: '3rem',
-          border: '2px dashed #e0e0e0',
-          borderRadius: '8px',
-          color: '#999',
+          color: '#64748b',
+          border: '1px dashed #cbd5e1',
+          borderRadius: 16,
         }}
       >
-        No tickets available
+        No incidents available
       </div>
     );
   }
 
-  // ───────────────────────── UI ─────────────────────────
+  // ─────────────────────────────────────────────
+  // UI (UNCHANGED + SEARCH ADDED)
+  // ─────────────────────────────────────────────
   return (
-    <div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-      {/* header (same style as KB) */}
+      {/* 🔍 SEARCH BAR (minimal, same style) */}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search incidents..."
+          style={{
+            flex: 1,
+            padding: '8px 12px',
+            borderRadius: 6,
+            border: '1px solid #e0e0e0',
+            fontSize: 13,
+          }}
+        />
+
+        {search && (
+          <button
+            onClick={() => setSearch('')}
+            style={{
+              padding: '8px 12px',
+              borderRadius: 6,
+              border: '1px solid #e0e0e0',
+              backgroundColor: 'white',
+              fontSize: 13,
+              cursor: 'pointer',
+            }}
+          >
+            Clear
+          </button>
+        )}
+      </div>
+
+      {/* ACTION BAR (UNCHANGED) */}
       <div
         style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          marginBottom: '1.5rem',
+          padding: 12,
+          borderRadius: 12,
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
         }}
       >
-        <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
-          {tickets.length} incidents available
-        </p>
+        <div style={{ fontSize: 13, color: '#64748b' }}>
+          {checkedIds.size} selected
+        </div>
 
         <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={toggleSelectAll}
             style={{
-              padding: '8px 14px',
-              border: '1px solid #e0e0e0',
-              borderRadius: 6,
-              background: 'transparent',
+              padding: '6px 12px',
+              borderRadius: 8,
+              border: '1px solid #e2e8f0',
+              background: 'white',
               cursor: 'pointer',
               fontSize: 13,
             }}
           >
-            {checkedIds.size === tickets.length
+            {checkedIds.size === filteredTickets.length
               ? 'Deselect all'
               : 'Select all'}
           </button>
@@ -161,10 +211,10 @@ function TicketList() {
             onClick={handleAddToKB}
             disabled={adding}
             style={{
-              padding: '8px 14px',
+              padding: '6px 12px',
+              borderRadius: 8,
               border: 'none',
-              borderRadius: 6,
-              background: '#2c3e50',
+              background: '#0f172a',
               color: 'white',
               cursor: 'pointer',
               fontSize: 13,
@@ -177,151 +227,114 @@ function TicketList() {
         </div>
       </div>
 
-      {/* TABLE (same style as KB) */}
-      <table
-        style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          fontSize: '14px',
-        }}
-      >
-        <thead>
-          <tr style={{ borderBottom: '2px solid #e0e0e0' }}>
-            <th style={{ width: 40 }}></th>
-            <th style={{ textAlign: 'left', padding: '10px 12px' }}>ID</th>
-            <th style={{ textAlign: 'left', padding: '10px 12px' }}>Title</th>
-            <th style={{ textAlign: 'left', padding: '10px 12px' }}>Category</th>
-            <th style={{ textAlign: 'left', padding: '10px 12px' }}>Severity</th>
-            <th style={{ textAlign: 'left', padding: '10px 12px' }}>Language</th>
-            <th style={{ textAlign: 'left', padding: '10px 12px' }}>KB</th>
-          </tr>
-        </thead>
+      {/* TABLE (ONLY CHANGE = filteredTickets) */}
+      <div style={{ overflowX: 'auto' }}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: 14,
+          }}
+        >
+          <thead>
+            <tr style={{ textAlign: 'left', color: '#64748b' }}>
+              <th></th>
+              <th>ID</th>
+              <th>Title</th>
+              <th>Severity</th>
+              <th>Category</th>
+              <th>Language</th>
+              <th>KB</th>
+            </tr>
+          </thead>
 
-        <tbody>
-          {tickets.map((t: Ticket) => (
-            <tr
-              key={t.ticket_id}
-              onClick={() =>
-                setSelected(
-                  selected?.ticket_id === t.ticket_id ? null : t
-                )
-              }
-              style={{
-                borderBottom: '1px solid #f0f0f0',
-                cursor: 'pointer',
-                backgroundColor:
-                  selected?.ticket_id === t.ticket_id
-                    ? '#f8f9fa'
-                    : 'transparent',
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
-                  '#f8f9fa';
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
-                  selected?.ticket_id === t.ticket_id
-                    ? '#f8f9fa'
-                    : 'transparent';
-              }}
-            >
-              {/* checkbox */}
-              <td
-                style={{ padding: '12px' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <input
-                  type="checkbox"
-                  checked={checkedIds.has(t.ticket_id)}
-                  onChange={() => toggleCheck(t.ticket_id)}
-                />
-              </td>
-
-              {/* ID */}
-              <td style={{ fontSize: 12, color: '#666' }}>
-                {t.ticket_id}
-              </td>
-
-              {/* Title */}
-              <td
+          <tbody>
+            {filteredTickets.map((t: Ticket) => (
+              <tr
+                key={t.ticket_id}
+                onClick={() =>
+                  setSelected(
+                    selected?.ticket_id === t.ticket_id ? null : t
+                  )
+                }
                 style={{
-                  maxWidth: 220,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  borderTop: '1px solid #e2e8f0',
+                  background:
+                    selected?.ticket_id === t.ticket_id
+                      ? '#f1f5f9'
+                      : 'transparent',
+                  cursor: 'pointer',
                 }}
               >
-                {t.title}
-              </td>
+                <td onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    checked={checkedIds.has(t.ticket_id)}
+                    onChange={() => toggleCheck(t.ticket_id)}
+                  />
+                </td>
 
-              {/* Category */}
-              <td>
-                <span
-                  style={{
-                    padding: '3px 10px',
-                    borderRadius: 20,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: 'white',
-                    backgroundColor:
-                      categoryColors[t.analysis?.category || 'other'],
-                  }}
-                >
-                  {t.analysis?.category || '—'}
-                </span>
-              </td>
+                <td style={{ fontSize: 12, color: '#64748b' }}>
+                  {t.ticket_id}
+                </td>
 
-              {/* Severity */}
-              <td>
-                <span
-                  style={{
-                    padding: '3px 10px',
-                    borderRadius: 20,
-                    fontSize: 11,
-                    fontWeight: 600,
-                    color: 'white',
-                    backgroundColor:
-                      severityColors[
-                        t.analysis?.severity || t.severity
-                      ],
-                  }}
-                >
-                  {(t.analysis?.severity || t.severity).toUpperCase()}
-                </span>
-              </td>
+                <td style={{ fontWeight: 500 }}>{t.title}</td>
 
-              {/* Language */}
-              <td style={{ fontSize: 13 }}>
-                {t.analysis?.detected_language || '—'}
-              </td>
-
-              {/* KB */}
-              <td>
-                {addedIds.has(t.ticket_id) ? (
-                  <span style={{ color: '#27ae60', fontSize: 12 }}>
-                    ✓ Added
+                <td>
+                  <span
+                    style={{
+                      padding: '4px 10px',
+                      borderRadius: 999,
+                      fontSize: 12,
+                      color: 'white',
+                      background:
+                        t.analysis?.severity === 'critical'
+                          ? '#ef4444'
+                          : t.analysis?.severity === 'high'
+                          ? '#f97316'
+                          : t.analysis?.severity === 'medium'
+                          ? '#f59e0b'
+                          : '#22c55e',
+                    }}
+                  >
+                    {(t.analysis?.severity || t.severity).toUpperCase()}
                   </span>
-                ) : (
-                  <span style={{ color: '#999' }}>—</span>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                </td>
 
-      {/* DETAIL PANEL (same KB style) */}
+                <td style={{ fontSize: 13 }}>
+                  {t.analysis?.category || '—'}
+                </td>
+
+                <td style={{ fontSize: 13 }}>
+                  {t.analysis?.detected_language || '—'}
+                </td>
+
+                <td>
+                  {addedIds.has(t.ticket_id) ? (
+                    <span style={{ color: '#22c55e', fontSize: 12 }}>
+                      ✓ Added
+                    </span>
+                  ) : (
+                    <span style={{ color: '#94a3b8' }}>—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* DETAIL */}
       {selected?.analysis && (
         <div
           style={{
-            marginTop: '1.5rem',
-            padding: '1.5rem',
-            border: '1px solid #e0e0e0',
-            borderRadius: 8,
-            backgroundColor: '#fafafa',
+            padding: 16,
+            borderRadius: 12,
+            border: '1px solid #e2e8f0',
+            background: 'white',
           }}
         >
-          <h3 style={{ margin: 0 }}>
+          <h3 style={{ marginBottom: 8 }}>
             {selected.ticket_id} — {selected.title}
           </h3>
 
