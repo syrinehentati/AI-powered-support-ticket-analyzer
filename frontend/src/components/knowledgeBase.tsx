@@ -41,7 +41,9 @@ function KnowledgeBase() {
       const data = await getKnowledgeBase();
       setEntries(data);
     } catch (err) {
-      setError('Could not load knowledge base. Make sure the backend is running.');
+      setError(
+        'Could not load knowledge base. Make sure the backend is running.'
+      );
     } finally {
       setLoading(false);
     }
@@ -51,34 +53,36 @@ function KnowledgeBase() {
     fetchEntries();
   }, [fetchEntries]);
 
-  if (loading) return (
-    <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
-      Loading knowledge base...
-    </p>
-  );
+  if (loading)
+    return (
+      <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
+        Loading knowledge base...
+      </p>
+    );
 
-  if (error) return (
-    <p style={{ color: '#c0392b', textAlign: 'center', padding: '2rem' }}>
-      {error}
-    </p>
-  );
+  if (error)
+    return (
+      <p style={{ color: '#c0392b', textAlign: 'center', padding: '2rem' }}>
+        {error}
+      </p>
+    );
 
   return (
     <div>
-
       {/* header */}
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: '1.5rem',
-      }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: '1.5rem',
+        }}
+      >
         <div>
           <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
             {entries.length === 0
               ? 'No entries yet. Analyze tickets and add them to build your knowledge base.'
-              : `${entries.length} resolved incident${entries.length === 1 ? '' : 's'} stored. AI uses these to inform future analyses.`
-            }
+              : `${entries.length} resolved incident${entries.length === 1 ? '' : 's'} stored. AI uses these to inform future analyses.`}
           </p>
         </div>
         <button
@@ -98,101 +102,175 @@ function KnowledgeBase() {
 
       {/* empty state */}
       {entries.length === 0 && (
-        <div style={{
-          textAlign: 'center',
-          padding: '3rem',
-          border: '2px dashed #e0e0e0',
-          borderRadius: '8px',
-          color: '#999',
-        }}>
+        <div
+          style={{
+            textAlign: 'center',
+            padding: '3rem',
+            border: '2px dashed #e0e0e0',
+            borderRadius: '8px',
+            color: '#999',
+          }}
+        >
           <p style={{ fontSize: '16px', marginBottom: '8px' }}>
             Knowledge base is empty
           </p>
           <p style={{ fontSize: '13px', margin: 0 }}>
-            Analyze a ticket then click "Add to Knowledge Base" to start building it.
+            Analyze a ticket then click "Add to Knowledge Base" to start
+            building it.
           </p>
         </div>
       )}
 
       {/* entries table */}
       {entries.length > 0 && (
-        <table style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          fontSize: '14px',
-        }}>
+        <table
+          style={{
+            width: '100%',
+            borderCollapse: 'collapse',
+            fontSize: '14px',
+          }}
+        >
           <thead>
             <tr style={{ borderBottom: '2px solid #e0e0e0' }}>
-              <th style={{ textAlign: 'left', padding: '10px 12px', color: '#666', fontWeight: 600 }}>ID</th>
-              <th style={{ textAlign: 'left', padding: '10px 12px', color: '#666', fontWeight: 600 }}>Title</th>
-              <th style={{ textAlign: 'left', padding: '10px 12px', color: '#666', fontWeight: 600 }}>Category</th>
-              <th style={{ textAlign: 'left', padding: '10px 12px', color: '#666', fontWeight: 600 }}>Severity</th>
-              <th style={{ textAlign: 'left', padding: '10px 12px', color: '#666', fontWeight: 600 }}>Language</th>
-              <th style={{ textAlign: 'left', padding: '10px 12px', color: '#666', fontWeight: 600 }}>Added</th>
+              <th
+                style={{
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  color: '#666',
+                  fontWeight: 600,
+                }}
+              >
+                ID
+              </th>
+              <th
+                style={{
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  color: '#666',
+                  fontWeight: 600,
+                }}
+              >
+                Title
+              </th>
+              <th
+                style={{
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  color: '#666',
+                  fontWeight: 600,
+                }}
+              >
+                Category
+              </th>
+              <th
+                style={{
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  color: '#666',
+                  fontWeight: 600,
+                }}
+              >
+                Severity
+              </th>
+              <th
+                style={{
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  color: '#666',
+                  fontWeight: 600,
+                }}
+              >
+                Language
+              </th>
+              <th
+                style={{
+                  textAlign: 'left',
+                  padding: '10px 12px',
+                  color: '#666',
+                  fontWeight: 600,
+                }}
+              >
+                Added
+              </th>
             </tr>
           </thead>
           <tbody>
             {entries.map((entry) => (
               <tr
                 key={entry.id}
-                onClick={() => setSelected(
-                  selected?.id === entry.id ? null : entry
-                )}
+                onClick={() =>
+                  setSelected(selected?.id === entry.id ? null : entry)
+                }
                 style={{
                   borderBottom: '1px solid #f0f0f0',
                   cursor: 'pointer',
-                  backgroundColor: selected?.id === entry.id
-                    ? '#f8f9fa'
-                    : 'transparent',
+                  backgroundColor:
+                    selected?.id === entry.id ? '#f8f9fa' : 'transparent',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLTableRowElement).style.backgroundColor = '#f8f9fa';
+                  (
+                    e.currentTarget as HTMLTableRowElement
+                  ).style.backgroundColor = '#f8f9fa';
                 }}
                 onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
+                  (
+                    e.currentTarget as HTMLTableRowElement
+                  ).style.backgroundColor =
                     selected?.id === entry.id ? '#f8f9fa' : 'transparent';
                 }}
               >
-                <td style={{ padding: '12px', fontSize: '12px', color: '#666' }}>
+                <td
+                  style={{ padding: '12px', fontSize: '12px', color: '#666' }}
+                >
                   {entry.ticket_id}
                 </td>
-                <td style={{
-                  padding: '12px',
-                  maxWidth: '200px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}>
+                <td
+                  style={{
+                    padding: '12px',
+                    maxWidth: '200px',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
                   {entry.title}
                 </td>
                 <td style={{ padding: '12px' }}>
-                  <span style={{
-                    padding: '3px 10px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: 'white',
-                    backgroundColor: categoryColors[entry.category] || '#7f8c8d',
-                  }}>
+                  <span
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: 'white',
+                      backgroundColor:
+                        categoryColors[entry.category] || '#7f8c8d',
+                    }}
+                  >
                     {entry.category}
                   </span>
                 </td>
                 <td style={{ padding: '12px' }}>
-                  <span style={{
-                    padding: '3px 10px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    color: 'white',
-                    backgroundColor: severityColors[entry.severity] || '#7f8c8d',
-                  }}>
+                  <span
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: '20px',
+                      fontSize: '11px',
+                      fontWeight: 600,
+                      color: 'white',
+                      backgroundColor:
+                        severityColors[entry.severity] || '#7f8c8d',
+                    }}
+                  >
                     {entry.severity}
                   </span>
                 </td>
                 <td style={{ padding: '12px', fontSize: '13px' }}>
                   {entry.detected_language}
                 </td>
-                <td style={{ padding: '12px', fontSize: '12px', color: '#999' }}>
+                <td
+                  style={{ padding: '12px', fontSize: '12px', color: '#999' }}
+                >
                   {new Date(entry.created_at).toLocaleDateString()}
                 </td>
               </tr>
@@ -203,19 +281,23 @@ function KnowledgeBase() {
 
       {/* selected entry detail */}
       {selected && (
-        <div style={{
-          marginTop: '1.5rem',
-          padding: '1.5rem',
-          border: '1px solid #e0e0e0',
-          borderRadius: '8px',
-          backgroundColor: '#fafafa',
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            marginBottom: '1rem',
-          }}>
+        <div
+          style={{
+            marginTop: '1.5rem',
+            padding: '1.5rem',
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px',
+            backgroundColor: '#fafafa',
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              marginBottom: '1rem',
+            }}
+          >
             <h3 style={{ margin: 0, fontSize: '16px' }}>
               {selected.ticket_id} — {selected.title}
             </h3>
@@ -234,7 +316,14 @@ function KnowledgeBase() {
           </div>
 
           <div style={{ marginBottom: '1rem' }}>
-            <h4 style={{ margin: '0 0 8px', fontSize: '13px', color: '#666', textTransform: 'uppercase' }}>
+            <h4
+              style={{
+                margin: '0 0 8px',
+                fontSize: '13px',
+                color: '#666',
+                textTransform: 'uppercase',
+              }}
+            >
               Description
             </h4>
             <p style={{ margin: 0, fontSize: '14px', lineHeight: 1.6 }}>
@@ -243,10 +332,24 @@ function KnowledgeBase() {
           </div>
 
           <div>
-            <h4 style={{ margin: '0 0 8px', fontSize: '13px', color: '#666', textTransform: 'uppercase' }}>
+            <h4
+              style={{
+                margin: '0 0 8px',
+                fontSize: '13px',
+                color: '#666',
+                textTransform: 'uppercase',
+              }}
+            >
               Resolution that worked
             </h4>
-            <ol style={{ margin: 0, paddingLeft: '1.2rem', lineHeight: 2, fontSize: '14px' }}>
+            <ol
+              style={{
+                margin: 0,
+                paddingLeft: '1.2rem',
+                lineHeight: 2,
+                fontSize: '14px',
+              }}
+            >
               {selected.resolution.map((step, index) => (
                 <li key={index}>{step}</li>
               ))}
@@ -254,7 +357,6 @@ function KnowledgeBase() {
           </div>
         </div>
       )}
-
     </div>
   );
 }

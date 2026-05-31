@@ -1,6 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { addToKnowledgeBase, getAllTickets } from '../services/api';
+import React, { useState } from 'react';
+import { addToKnowledgeBase } from '../services/api';
+import { useTickets } from '../hooks/useTickets';
+
 import { Ticket } from '../types';
+import Skeleton from './ui/Skeleton';
+import ErrorCard from './ui/ErrorCard';
 import AnalysisResult from './AnalysisResult';
 
 const severityColors: Record<string, string> = {
@@ -20,38 +24,18 @@ const categoryColors: Record<string, string> = {
 };
 
 function TicketList() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const { data: tickets = [], isLoading, error, refetch } = useTickets();
+
   const [selected, setSelected] = useState<Ticket | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set());
-  const [adding, setAdding] = useState(false);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  const [adding, setAdding] = useState(false);
 
-  const fetchTickets = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getAllTickets();
-      setTickets(data);
-    } catch (err) {
-      setError('Could not load tickets. Make sure the backend is running.');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchTickets();
-  }, [fetchTickets]);
-
-  function toggleCheck(ticketId: string) {
+  // ───────────────────────── selection ─────────────────────────
+  function toggleCheck(id: string) {
     setCheckedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(ticketId)) {
-        next.delete(ticketId);
-      } else {
-        next.add(ticketId);
-      }
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   }
@@ -60,22 +44,24 @@ function TicketList() {
     if (checkedIds.size === tickets.length) {
       setCheckedIds(new Set());
     } else {
-      setCheckedIds(new Set(tickets.map((t) => t.ticket_id)));
+      setCheckedIds(new Set(tickets.map((t: Ticket) => t.ticket_id)));
     }
   }
 
-  async function handleAddToKnowledgeBase() {
+  // ───────────────────────── add KB ─────────────────────────
+  async function handleAddToKB() {
     const toAdd = tickets.filter(
-      (t) => checkedIds.has(t.ticket_id) && !addedIds.has(t.ticket_id)
+      (t: Ticket) =>
+        checkedIds.has(t.ticket_id) && !addedIds.has(t.ticket_id)
     );
 
-    if (toAdd.length === 0) return;
+    if (!toAdd.length) return;
 
     setAdding(true);
-    const newlyAdded = new Set(addedIds);
 
     for (const ticket of toAdd) {
       if (!ticket.analysis) continue;
+
       try {
         await addToKnowledgeBase({
           ticket_id: ticket.ticket_id,
@@ -87,111 +73,111 @@ function TicketList() {
           severity: ticket.analysis.severity,
           detected_language: ticket.analysis.detected_language,
         });
-        newlyAdded.add(ticket.ticket_id);
-      } catch (err) {
-        // skip failed ones silently
+
+        setAddedIds((prev) => new Set(prev).add(ticket.ticket_id));
+      } catch {
+        // silent fail
       }
     }
 
-    setAddedIds(new Set(newlyAdded));
     setCheckedIds(new Set());
     setAdding(false);
   }
 
-  const selectedCount = checkedIds.size;
-  const alreadyAddedCount = [...checkedIds].filter((id) =>
-    addedIds.has(id)
-  ).length;
-  const newToAddCount = selectedCount - alreadyAddedCount;
-
-  // ─── early returns ───────────────────────────────────────────
-
-  if (loading)
+  // ───────────────────────── LOADING ─────────────────────────
+  if (isLoading) {
     return (
-      <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
-        Loading tickets...
-      </p>
+      <div style={{ display: 'grid', gap: 10 }}>
+        <Skeleton height={40} />
+        <Skeleton height={40} />
+        <Skeleton height={40} />
+        <Skeleton height={40} />
+      </div>
     );
+  }
 
-  if (error)
+  // ───────────────────────── ERROR ─────────────────────────
+  if (error) {
     return (
-      <p style={{ color: '#c0392b', textAlign: 'center', padding: '2rem' }}>
-        {error}
-      </p>
+      <ErrorCard
+        message="Could not load incidents. Backend may be offline."
+        onRetry={refetch}
+      />
     );
+  }
 
-  if (tickets.length === 0)
+  // ───────────────────────── EMPTY ─────────────────────────
+  if (!tickets.length) {
     return (
-      <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
-        No tickets yet. Analyze some tickets first or run bulk analyze.
-      </p>
+      <div
+        style={{
+          textAlign: 'center',
+          padding: '3rem',
+          border: '2px dashed #e0e0e0',
+          borderRadius: '8px',
+          color: '#999',
+        }}
+      >
+        No tickets available
+      </div>
     );
+  }
 
-  // ─── render ──────────────────────────────────────────────────
-
+  // ───────────────────────── UI ─────────────────────────
   return (
     <div>
 
-      {/* knowledge base toolbar */}
+      {/* header (same style as KB) */}
       <div
         style={{
           display: 'flex',
+          justifyContent: 'space-between',
           alignItems: 'center',
-          gap: '1rem',
-          marginBottom: '1rem',
-          padding: '10px 12px',
-          backgroundColor: '#f8f9fa',
-          borderRadius: '6px',
-          border: '1px solid #e0e0e0',
+          marginBottom: '1.5rem',
         }}
       >
-        <span style={{ fontSize: '13px', color: '#666' }}>
-          {selectedCount === 0
-            ? 'Select tickets to add to knowledge base'
-            : `${selectedCount} selected${
-                newToAddCount > 0
-                  ? ` — ${newToAddCount} new`
-                  : ' — all already added'
-              }`}
-        </span>
-        <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
+        <p style={{ margin: 0, color: '#666', fontSize: '14px' }}>
+          {tickets.length} incidents available
+        </p>
+
+        <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={toggleSelectAll}
             style={{
-              padding: '6px 14px',
+              padding: '8px 14px',
               border: '1px solid #e0e0e0',
-              borderRadius: '6px',
-              backgroundColor: 'white',
-              fontSize: '13px',
+              borderRadius: 6,
+              background: 'transparent',
               cursor: 'pointer',
+              fontSize: 13,
             }}
           >
-            {checkedIds.size === tickets.length ? 'Deselect all' : 'Select all'}
+            {checkedIds.size === tickets.length
+              ? 'Deselect all'
+              : 'Select all'}
           </button>
+
           <button
-            onClick={handleAddToKnowledgeBase}
-            disabled={adding || newToAddCount === 0}
+            onClick={handleAddToKB}
+            disabled={adding}
             style={{
-              padding: '6px 14px',
-              backgroundColor:
-                adding || newToAddCount === 0 ? '#bbb' : '#2c3e50',
-              color: 'white',
+              padding: '8px 14px',
               border: 'none',
-              borderRadius: '6px',
-              fontSize: '13px',
+              borderRadius: 6,
+              background: '#2c3e50',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: 13,
               fontWeight: 600,
-              cursor:
-                adding || newToAddCount === 0 ? 'not-allowed' : 'pointer',
+              opacity: adding ? 0.6 : 1,
             }}
           >
-            {adding
-              ? 'Adding...'
-              : `+ Add ${newToAddCount > 0 ? newToAddCount : ''} to Knowledge Base`}
+            {adding ? 'Adding...' : 'Add to Knowledge Base'}
           </button>
         </div>
       </div>
 
-      {/* table */}
+      {/* TABLE (same style as KB) */}
       <table
         style={{
           width: '100%',
@@ -201,91 +187,30 @@ function TicketList() {
       >
         <thead>
           <tr style={{ borderBottom: '2px solid #e0e0e0' }}>
-            <th style={{ padding: '10px 12px', width: '40px' }}>
-              <input
-                type="checkbox"
-                checked={
-                  tickets.length > 0 && checkedIds.size === tickets.length
-                }
-                onChange={toggleSelectAll}
-              />
-            </th>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: '10px 12px',
-                color: '#666',
-                fontWeight: 600,
-              }}
-            >
-              ID
-            </th>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: '10px 12px',
-                color: '#666',
-                fontWeight: 600,
-              }}
-            >
-              Title
-            </th>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: '10px 12px',
-                color: '#666',
-                fontWeight: 600,
-              }}
-            >
-              Severity
-            </th>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: '10px 12px',
-                color: '#666',
-                fontWeight: 600,
-              }}
-            >
-              Category
-            </th>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: '10px 12px',
-                color: '#666',
-                fontWeight: 600,
-              }}
-            >
-              Language
-            </th>
-            <th
-              style={{
-                textAlign: 'left',
-                padding: '10px 12px',
-                color: '#666',
-                fontWeight: 600,
-              }}
-            >
-              KB
-            </th>
+            <th style={{ width: 40 }}></th>
+            <th style={{ textAlign: 'left', padding: '10px 12px' }}>ID</th>
+            <th style={{ textAlign: 'left', padding: '10px 12px' }}>Title</th>
+            <th style={{ textAlign: 'left', padding: '10px 12px' }}>Category</th>
+            <th style={{ textAlign: 'left', padding: '10px 12px' }}>Severity</th>
+            <th style={{ textAlign: 'left', padding: '10px 12px' }}>Language</th>
+            <th style={{ textAlign: 'left', padding: '10px 12px' }}>KB</th>
           </tr>
         </thead>
+
         <tbody>
-          {tickets.map((ticket) => (
+          {tickets.map((t: Ticket) => (
             <tr
-              key={ticket.ticket_id}
+              key={t.ticket_id}
               onClick={() =>
                 setSelected(
-                  selected?.ticket_id === ticket.ticket_id ? null : ticket
+                  selected?.ticket_id === t.ticket_id ? null : t
                 )
               }
               style={{
                 borderBottom: '1px solid #f0f0f0',
                 cursor: 'pointer',
                 backgroundColor:
-                  selected?.ticket_id === ticket.ticket_id
+                  selected?.ticket_id === t.ticket_id
                     ? '#f8f9fa'
                     : 'transparent',
               }}
@@ -295,96 +220,89 @@ function TicketList() {
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLTableRowElement).style.backgroundColor =
-                  selected?.ticket_id === ticket.ticket_id
+                  selected?.ticket_id === t.ticket_id
                     ? '#f8f9fa'
                     : 'transparent';
               }}
             >
-              {/* checkbox — stopPropagation so clicking it doesn't open detail */}
+              {/* checkbox */}
               <td
-                style={{ padding: '12px', width: '40px' }}
+                style={{ padding: '12px' }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <input
                   type="checkbox"
-                  checked={checkedIds.has(ticket.ticket_id)}
-                  onChange={() => toggleCheck(ticket.ticket_id)}
+                  checked={checkedIds.has(t.ticket_id)}
+                  onChange={() => toggleCheck(t.ticket_id)}
                 />
               </td>
 
-              <td style={{ padding: '12px', fontSize: '12px', color: '#666' }}>
-                {ticket.ticket_id}
+              {/* ID */}
+              <td style={{ fontSize: 12, color: '#666' }}>
+                {t.ticket_id}
               </td>
 
+              {/* Title */}
               <td
                 style={{
-                  padding: '12px',
-                  maxWidth: '200px',
+                  maxWidth: 220,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                 }}
               >
-                {ticket.title}
+                {t.title}
               </td>
 
-              <td style={{ padding: '12px' }}>
+              {/* Category */}
+              <td>
                 <span
                   style={{
                     padding: '3px 10px',
-                    borderRadius: '20px',
-                    fontSize: '11px',
+                    borderRadius: 20,
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: 'white',
+                    backgroundColor:
+                      categoryColors[t.analysis?.category || 'other'],
+                  }}
+                >
+                  {t.analysis?.category || '—'}
+                </span>
+              </td>
+
+              {/* Severity */}
+              <td>
+                <span
+                  style={{
+                    padding: '3px 10px',
+                    borderRadius: 20,
+                    fontSize: 11,
                     fontWeight: 600,
                     color: 'white',
                     backgroundColor:
                       severityColors[
-                        ticket.analysis?.severity || ticket.severity
-                      ] || '#7f8c8d',
+                        t.analysis?.severity || t.severity
+                      ],
                   }}
                 >
-                  {(
-                    ticket.analysis?.severity || ticket.severity
-                  ).toUpperCase()}
+                  {(t.analysis?.severity || t.severity).toUpperCase()}
                 </span>
               </td>
 
-              <td style={{ padding: '12px' }}>
-                {ticket.analysis?.category ? (
-                  <span
-                    style={{
-                      padding: '3px 10px',
-                      borderRadius: '20px',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      color: 'white',
-                      backgroundColor:
-                        categoryColors[ticket.analysis.category] || '#7f8c8d',
-                    }}
-                  >
-                    {ticket.analysis.category}
-                  </span>
-                ) : (
-                  '—'
-                )}
+              {/* Language */}
+              <td style={{ fontSize: 13 }}>
+                {t.analysis?.detected_language || '—'}
               </td>
 
-              <td style={{ padding: '12px', fontSize: '13px' }}>
-                {ticket.analysis?.detected_language || '—'}
-              </td>
-
-              <td style={{ padding: '12px' }}>
-                {addedIds.has(ticket.ticket_id) ? (
-                  <span
-                    style={{
-                      fontSize: '12px',
-                      color: '#27ae60',
-                      fontWeight: 600,
-                    }}
-                  >
+              {/* KB */}
+              <td>
+                {addedIds.has(t.ticket_id) ? (
+                  <span style={{ color: '#27ae60', fontSize: 12 }}>
                     ✓ Added
                   </span>
                 ) : (
-                  <span style={{ fontSize: '12px', color: '#ccc' }}>—</span>
+                  <span style={{ color: '#999' }}>—</span>
                 )}
               </td>
             </tr>
@@ -392,22 +310,24 @@ function TicketList() {
         </tbody>
       </table>
 
-      {/* selected ticket detail */}
+      {/* DETAIL PANEL (same KB style) */}
       {selected?.analysis && (
-        <div style={{ marginTop: '1.5rem' }}>
-          <h3
-            style={{
-              fontSize: '14px',
-              color: '#666',
-              marginBottom: '0.5rem',
-            }}
-          >
+        <div
+          style={{
+            marginTop: '1.5rem',
+            padding: '1.5rem',
+            border: '1px solid #e0e0e0',
+            borderRadius: 8,
+            backgroundColor: '#fafafa',
+          }}
+        >
+          <h3 style={{ margin: 0 }}>
             {selected.ticket_id} — {selected.title}
           </h3>
+
           <AnalysisResult analysis={selected.analysis} />
         </div>
       )}
-
     </div>
   );
 }
