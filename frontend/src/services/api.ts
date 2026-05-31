@@ -10,6 +10,32 @@ const api = axios.create({
   baseURL: process.env.REACT_APP_API_URL,
 });
 
+// ─── global network-error event ──────────────────────────────────────────────
+// Components can listen to 'app:network-error' on window to show a banner.
+// We deduplicate so one outage doesn't fire dozens of events.
+let networkErrorPending = false;
+
+api.interceptors.response.use(
+  (response) => {
+    // backend is reachable again — clear the flag and notify
+    if (networkErrorPending) {
+      networkErrorPending = false;
+      window.dispatchEvent(new CustomEvent('app:network-recover'));
+    }
+    return response;
+  },
+  (error: AxiosError) => {
+    if (!error.response && !networkErrorPending) {
+      // no response = backend unreachable
+      networkErrorPending = true;
+      window.dispatchEvent(new CustomEvent('app:network-error'));
+    }
+    return Promise.reject(error);
+  }
+);
+
+// ─── error helper ─────────────────────────────────────────────────────────────
+
 function handleApiError(err: unknown): never {
   if (err instanceof AxiosError) {
     const message = err.response?.data?.message;
@@ -19,6 +45,8 @@ function handleApiError(err: unknown): never {
   }
   throw new Error('An unexpected error occurred');
 }
+
+// ─── endpoints ────────────────────────────────────────────────────────────────
 
 export const analyzeTicket = async (data: TicketFormData): Promise<Ticket> => {
   try {
@@ -38,16 +66,19 @@ export const getAllTickets = async (): Promise<Ticket[]> => {
   }
 };
 
-export const bulkAnalyze = async (): Promise<Ticket[]> => {
+export const bulkAnalyze = async (tickets?: Ticket[]): Promise<Ticket[]> => {
   try {
-    const response = await api.post<Ticket[]>('/tickets/bulk-analyze');
+    const response = await api.post<Ticket[]>(
+      '/tickets/bulk-analyze',
+      tickets ? { tickets } : {}
+    );
     return response.data;
   } catch (err) {
     throw handleApiError(err);
   }
 };
 
-// ─── knowledge base ─────────────────────────────────────────────
+// ─── knowledge base ───────────────────────────────────────────────────────────
 
 export const getKnowledgeBase = async (): Promise<KnowledgeBaseEntry[]> => {
   try {

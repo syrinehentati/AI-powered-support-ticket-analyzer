@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import AnalysisResult from './AnalysisResult';
-import { useTicketAnalysis } from './useTicketAnalysis';
+import { useTicketAnalysis } from '../hooks/useTicketAnalysis';
 import { getAllTickets } from '../services/api';
+import AnalysisResult from '../components/analyze/AnalysisResult';
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -21,7 +21,7 @@ const labelStyle: React.CSSProperties = {
   color: '#333',
 };
 
-function TicketForm() {
+function AnalyzePage() {
   const [formData, setFormData] = useState({
     ticket_id: '',
     title: '',
@@ -36,8 +36,6 @@ function TicketForm() {
     new Set()
   );
 
-
-  
   const ticketIdRef = useRef<HTMLInputElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const descriptionRef = useRef<HTMLTextAreaElement>(null);
@@ -45,29 +43,29 @@ function TicketForm() {
   const resultRef = useRef<HTMLDivElement>(null);
 
   const { result, loading, error, analyze } = useTicketAnalysis();
-  
- // ─── effects ────────────────────────────────
-useEffect(() => {
-  // fetch existing ticket ids on mount
-  getAllTickets()
-    .then((tickets) => {
-      setExistingTicketIds(new Set(tickets.map((t) => t.ticket_id)));
-    })
-    .catch(() => {});
-}, []);
 
-useEffect(() => {
-  // auto focus ticket id on load
-  ticketIdRef.current?.focus();
-}, []);
+  // ─── effects ────────────────────────────────
+  useEffect(() => {
+    // fetch existing ticket ids on mount
+    getAllTickets()
+      .then((tickets) => {
+        setExistingTicketIds(new Set(tickets.map((t) => t.ticket_id)));
+      })
+      .catch(() => {});
+  }, []);
 
-useEffect(() => {
-  // scroll to result and register new ticket id
-  if (result) {
-    resultRef.current?.scrollIntoView({ behavior: 'smooth' });
-    setExistingTicketIds((prev) => new Set(prev).add(result.ticket_id));
-  }
-}, [result]);
+  useEffect(() => {
+    // auto focus ticket id on load
+    ticketIdRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    // scroll to result and register new ticket id
+    if (result) {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setExistingTicketIds((prev) => new Set(prev).add(result.ticket_id));
+    }
+  }, [result]);
 
   const handleSubmit = useCallback(() => {
     analyze({
@@ -311,4 +309,4 @@ useEffect(() => {
   );
 }
 
-export default TicketForm;
+export default AnalyzePage;

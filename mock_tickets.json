@@ -1,28 +1,74 @@
 [
   {
-    "ticket_id": "TKT-011",
-    "title": "Fahrzeugdaten-Gateway antwortet nicht",
+    "ticket_id": "TKT-020",
+    "title": "Authentication service returning 503 on login",
     "severity": "critical",
-
-    "description": "Das zentrale Fahrzeugdaten-Gateway reagiert seit heute Morgen nicht mehr auf Anfragen. Betroffen sind alle Fahrzeuge der Produktionslinie 3 und 4. Die Techniker können keine Diagnosedaten abrufen und die Qualitätskontrolle ist vollständig blockiert. Das Problem trat unmittelbar nach dem Neustart des Servers um 05:30 Uhr auf.",
+    "description": "The authentication service has been returning 503 errors for all login attempts since 08:15 this morning. All users are locked out of the platform. The issue started immediately after a routine certificate renewal was applied to the auth cluster. The ops team has attempted a rollback but the service has not recovered. Customer support is receiving a high volume of complaints.",
     "logs": [
-      "2026-05-14 05:31:02 FATAL GatewayService - Failed to bind to port 8443: address already in use",
-      "2026-05-14 05:31:02 ERROR ServiceRegistry - Gateway heartbeat lost: last seen 05:30:58",
-      "2026-05-14 05:31:03 WARN  LoadBalancer - Removing unhealthy node gateway-prod-01 from rotation",
-      "2026-05-14 05:31:04 ERROR DiagnosticClient - Unable to reach gateway after 3 retries: connection refused"
+      "2026-05-14 08:15:44 FATAL AuthService - TLS handshake failed: certificate chain incomplete",
+      "2026-05-14 08:15:44 ERROR TokenIssuer - Unable to sign JWT: private key not found at /etc/ssl/auth/private.pem",
+      "2026-05-14 08:15:45 WARN  HealthCheck - Auth service health probe failed: HTTP 503",
+      "2026-05-14 08:15:46 ERROR LoadBalancer - All auth nodes unhealthy, returning 503 to clients"
     ]
   },
   {
-    "ticket_id": "TKT-012",
-    "title": "Speicherfehler im Echtzeit-Diagnosesystem",
+    "ticket_id": "TKT-021",
+    "title": "Database connection pool exhausted on reporting service",
     "severity": "high",
-
-    "description": "Das Echtzeit-Diagnosesystem für Motorsteuergeräte gibt seit dem gestrigen Abend sporadische Speicherfehler aus. Die Fehler treten besonders bei der gleichzeitigen Diagnose von mehr als 8 Fahrzeugen auf. Zwei Diagnosesitzungen wurden unerwartet beendet was zu unvollständigen Fehlerberichten geführt hat. Der Kunde wartet dringend auf eine Lösung.",
+    "description": "The reporting service has been failing to generate end-of-day reports since last night. Investigation shows the PostgreSQL connection pool is being exhausted within minutes of the batch job starting. Connections are not being released after queries complete. Three scheduled reports have failed and finance is waiting on the data for their morning review.",
     "logs": [
-      "2026-05-13 19:44:21 ERROR DiagnosticEngine - Segmentation fault at memory address 0x00007f4a2c",
-      "2026-05-13 19:44:21 WARN  SessionManager - Concurrent session limit approaching: 7/8 active",
-      "2026-05-13 19:44:22 FATAL MemoryAllocator - Failed to allocate 524288 bytes: out of memory",
-      "2026-05-13 19:44:23 ERROR ReportWriter - Session TKT-DIAG-0091 terminated before completion"
+      "2026-05-13 22:01:13 ERROR ReportScheduler - Job EOD-FINANCE-05 failed to start: no available DB connections",
+      "2026-05-13 22:01:13 WARN  ConnectionPool - Pool exhausted: 100/100 connections in use",
+      "2026-05-13 22:01:14 ERROR QueryRunner - Timeout waiting for connection after 30000ms",
+      "2026-05-13 22:01:15 WARN  ConnectionPool - Detected 47 stale connections not returned to pool"
+    ]
+  },
+  {
+    "ticket_id": "TKT-022",
+    "title": "File upload service silently dropping files over 50MB",
+    "severity": "medium",
+    "description": "Users have reported that uploaded files larger than 50MB appear to succeed from the client side but the files are never persisted to storage. The upload returns a 200 OK response but no file is written to the S3 bucket. The issue has been present for at least 3 days and was discovered when a client noticed missing assets. Smaller files are unaffected.",
+    "logs": [
+      "2026-05-11 14:23:07 WARN  UploadHandler - Multipart upload chunk size exceeded soft limit: 52428800 bytes",
+      "2026-05-11 14:23:08 ERROR S3Client - PutObject failed: request entity too large",
+      "2026-05-11 14:23:08 WARN  UploadController - S3 write error suppressed, returning 200 to client",
+      "2026-05-11 14:23:09 INFO  AuditLog - Upload recorded as successful for file assets/project-brief.pdf (size: 54MB)"
+    ]
+  },
+  {
+    "ticket_id": "TKT-023",
+    "title": "Scheduled email notifications not sending",
+    "severity": "medium",
+    "description": "Scheduled email notifications have not been delivered since Tuesday morning. The notification worker appears to be running but no emails are reaching users. Manually triggered notifications work fine. The issue is isolated to the cron-based scheduler. Approximately 1,400 notification emails are currently queued and undelivered.",
+    "logs": [
+      "2026-05-13 06:00:01 INFO  CronScheduler - Notification job triggered: batch size 214",
+      "2026-05-13 06:00:02 ERROR SMTPClient - Connection refused: smtp.internal:587",
+      "2026-05-13 06:00:02 WARN  NotificationWorker - SMTP unavailable, requeuing 214 messages",
+      "2026-05-13 06:00:03 ERROR QueueManager - Requeue failed: dead letter queue at capacity (1400/1400)"
+    ]
+  },
+  {
+    "ticket_id": "TKT-024",
+    "title": "API rate limiter blocking legitimate traffic",
+    "severity": "high",
+    "description": "Since a configuration update deployed yesterday afternoon, the API gateway rate limiter is incorrectly applying per-IP limits to traffic routed through the internal proxy. Because all internal services share the same proxy egress IP, they are collectively hitting the limit within seconds. Several microservices are receiving 429 responses and retrying aggressively, making the situation worse.",
+    "logs": [
+      "2026-05-13 15:42:09 WARN  RateLimiter - IP 10.0.0.1 reached limit: 1000/1000 requests in 60s",
+      "2026-05-13 15:42:10 ERROR APIGateway - Request rejected with 429: rate limit exceeded for 10.0.0.1",
+      "2026-05-13 15:42:10 WARN  InventoryService - Received 429 from product-api, retrying in 1s",
+      "2026-05-13 15:42:11 ERROR RateLimiter - Retry storm detected: 340 requests in last 2s from 10.0.0.1"
+    ]
+  },
+  {
+    "ticket_id": "TKT-025",
+    "title": "Search index out of sync after data migration",
+    "severity": "low",
+    "description": "Following last weekend's data migration, the Elasticsearch search index is returning stale results. Products updated or added in the last 5 days are not appearing in search. The index replication job completed without errors according to the logs but a manual count shows 3,200 documents are missing from the index. Read operations are unaffected; only search is impacted.",
+    "logs": [
+      "2026-05-10 02:14:55 INFO  MigrationRunner - Reindex job started: 48200 documents queued",
+      "2026-05-10 02:31:02 WARN  ElasticClient - Bulk insert partial failure: 3200 documents rejected (version conflict)",
+      "2026-05-10 02:31:03 INFO  MigrationRunner - Reindex job completed with warnings",
+      "2026-05-10 02:31:03 ERROR IndexValidator - Document count mismatch: expected 48200, indexed 45000"
     ]
   }
 ]

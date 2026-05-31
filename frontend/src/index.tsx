@@ -13,7 +13,13 @@ const queryClient = new QueryClient({
     },
   },
 });
-
+// Prevent CRA dev overlay from showing for network errors
+// (handled gracefully by NetworkErrorBanner)
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason?.message === 'Network Error') {
+    event.preventDefault();
+  }
+});
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>

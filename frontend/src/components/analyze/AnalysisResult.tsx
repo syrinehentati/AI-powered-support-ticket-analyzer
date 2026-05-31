@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { TicketAnalysis } from '../types';
-import { addToKnowledgeBase } from '../services/api';
 import styles from './AnalysisResult.module.css';
+import { TicketAnalysis } from '../../types';
+import { addToKnowledgeBase } from '../../services/api';
 
 interface Props {
   analysis: TicketAnalysis;

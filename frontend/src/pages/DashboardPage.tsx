@@ -19,13 +19,18 @@ function Badge({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-export default function Dashboard() {
+export default function DashboardPage() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [kbCount, setKbCount] = useState(0);
 
   useEffect(() => {
-    getAllTickets().then(setTickets);
-    getKnowledgeBase().then((kb) => setKbCount(kb.length));
+    getAllTickets()
+      .then(setTickets)
+      .catch(() => {});
+
+    getKnowledgeBase()
+      .then((kb) => setKbCount(kb.length))
+      .catch(() => {});
   }, []);
 
   const stats = useMemo(() => {
@@ -41,8 +46,7 @@ export default function Dashboard() {
     });
 
     const topCategory =
-      Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] ||
-      'N/A';
+      Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
 
     return { total, critical, topCategory };
   }, [tickets]);
@@ -69,11 +73,10 @@ export default function Dashboard() {
         <h3 style={{ marginTop: 0 }}>System Insights</h3>
 
         <p style={{ color: '#64748b' }}>
-          • AI is currently analyzing multilingual incidents  
+          • AI is currently analyzing multilingual incidents
           <br />
-          • Knowledge base improves future predictions  
-          <br />
-          • Critical incidents require immediate attention
+          • Knowledge base improves future predictions
+          <br />• Critical incidents require immediate attention
         </p>
       </div>
 

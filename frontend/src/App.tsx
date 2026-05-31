@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 
-import TicketForm from './components/TicketForm';
-import TicketList from './components/TicketList';
-import BulkAnalyze from './components/bulkAnalyze';
-import KnowledgeBase from './components/knowledgeBase';
-import Dashboard from './components/Dashboard';
+import TicketForm from './pages/AnalyzePage';
+import TicketList from './pages/IncidentsPage';
+import BulkAnalyze from './pages/bulkAnalyzePage';
+import KnowledgeBase from './pages/knowledgeBasePage';
+import Dashboard from './pages/DashboardPage';
 
 import ErrorBoundary from './components/ErrorBoundary';
 import { useTheme } from './context/ThemeContext';
 import Sidebar from './layouts/Sidebar';
+import NetworkErrorBanner from './components/Networkerrorbanner';
 
 type Screen = 'dashboard' | 'analyze' | 'list' | 'knowledge' | 'bulk';
 
@@ -25,6 +26,7 @@ function App() {
         color: theme === 'light' ? '#0f172a' : '#f8fafc',
       }}
     >
+      <NetworkErrorBanner />
       {/* SIDEBAR */}
       <Sidebar current={screen} onChange={setScreen} />
 
