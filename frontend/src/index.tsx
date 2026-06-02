@@ -8,7 +8,8 @@ import { ThemeProvider } from './context/ThemeContext';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 2,
+      staleTime: 1000 * 30,
+      retry: 1,
       refetchOnWindowFocus: false,
     },
   },

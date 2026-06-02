@@ -3,7 +3,7 @@ import { getKnowledgeBase } from '../services/api';
 
 export function useKnowledgeBase() {
   return useQuery({
-    queryKey: ['kb'],
+    queryKey: ['knowledge-base'],
     queryFn: getKnowledgeBase,
   });
 }

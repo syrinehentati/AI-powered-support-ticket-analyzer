@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { getKnowledgeBase } from '../services/api';
+import React, { useState } from 'react';
+
+import { useKnowledgeBase } from '../hooks/useKnowledgeBase';
 
 interface KnowledgeBaseEntry {
   id: string;
@@ -30,43 +31,23 @@ const categoryColors: Record<string, string> = {
 };
 
 function KnowledgeBase() {
-  const [entries, setEntries] = useState<KnowledgeBaseEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<KnowledgeBaseEntry | null>(null);
+const [selected, setSelected] = useState<KnowledgeBaseEntry | null>(null);
 
-  const fetchEntries = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getKnowledgeBase();
-      setEntries(data);
-    } catch (err) {
-      setError(
-        'Could not load knowledge base. Make sure the backend is running.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+const { data: entries = [], isLoading, error, refetch } = useKnowledgeBase();
+  
+if (isLoading)
+  return (
+    <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
+      Loading knowledge base...
+    </p>
+  );
 
-  useEffect(() => {
-    fetchEntries();
-  }, [fetchEntries]);
-
-  if (loading)
-    return (
-      <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
-        Loading knowledge base...
-      </p>
-    );
-
-  if (error)
-    return (
-      <p style={{ color: '#c0392b', textAlign: 'center', padding: '2rem' }}>
-        {error}
-      </p>
-    );
-
+if (error)
+  return (
+    <p style={{ color: '#c0392b', textAlign: 'center', padding: '2rem' }}>
+      Could not load knowledge base. Make sure the backend is running.
+    </p>
+  );
   return (
     <div>
       {/* header */}
@@ -86,7 +67,7 @@ function KnowledgeBase() {
           </p>
         </div>
         <button
-          onClick={fetchEntries}
+          onClick={()=> refetch()}
           style={{
             padding: '8px 16px',
             border: '1px solid #e0e0e0',
@@ -195,7 +176,7 @@ function KnowledgeBase() {
             </tr>
           </thead>
           <tbody>
-            {entries.map((entry) => (
+            {entries.map((entry: KnowledgeBaseEntry) => (
               <tr
                 key={entry.id}
                 onClick={() =>

@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { getAllTickets, getKnowledgeBase } from '../services/api';
+import React, { useMemo } from 'react';
+import { useDashboardStats } from '../hooks/useDashboard';
 import { Ticket } from '../types';
 
 function Badge({ label, value }: { label: string; value: string | number }) {
@@ -20,27 +20,15 @@ function Badge({ label, value }: { label: string; value: string | number }) {
 }
 
 export default function DashboardPage() {
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [kbCount, setKbCount] = useState(0);
-
-  useEffect(() => {
-    getAllTickets()
-      .then(setTickets)
-      .catch(() => {});
-
-    getKnowledgeBase()
-      .then((kb) => setKbCount(kb.length))
-      .catch(() => {});
-  }, []);
-
+ const { tickets, kbCount, isLoading } = useDashboardStats();
   const stats = useMemo(() => {
     const total = tickets.length;
     const critical = tickets.filter(
-      (t) => t.analysis?.severity === 'critical'
+      (t: Ticket) => t.analysis?.severity === 'critical'
     ).length;
 
     const categories: Record<string, number> = {};
-    tickets.forEach((t) => {
+    tickets.forEach((t:Ticket) => {
       const c = t.analysis?.category || 'unknown';
       categories[c] = (categories[c] || 0) + 1;
     });
@@ -50,6 +38,12 @@ export default function DashboardPage() {
 
     return { total, critical, topCategory };
   }, [tickets]);
+
+if (isLoading) return (
+  <p style={{ color: '#666', textAlign: 'center', padding: '2rem' }}>
+    Loading dashboard...
+  </p>
+);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -91,7 +85,7 @@ export default function DashboardPage() {
       >
         <h3 style={{ marginTop: 0 }}>Recent Activity</h3>
 
-        {tickets.slice(0, 5).map((t) => (
+        {tickets.slice(0, 5).map((t: Ticket) => (
           <div
             key={t.ticket_id}
             style={{
