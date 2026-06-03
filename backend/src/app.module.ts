@@ -17,13 +17,13 @@ import { KnowledgeBaseEntity } from './knowledge-base/entities/knowledge-base.en
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
-        host: config.get('DATABASE_HOST'),
-        port: config.get<number>('DATABASE_PORT'),
-        username: config.get('DATABASE_USER'),
-        password: config.get('DATABASE_PASSWORD'),
-        database: config.get('DATABASE_NAME'),
+        url: config.get('DATABASE_URL'),
         entities: [TicketEntity, KnowledgeBaseEntity],
         synchronize: true,
+        ssl:
+          config.get('NODE_ENV') === 'production'
+            ? { rejectUnauthorized: false }
+            : false,
       }),
     }),
     AnalysisModule,

@@ -13,7 +13,8 @@ Built for real operational complexity. Not a tutorial project.
 
 ## Live Demo
 
-🔗 [coming soon](https://youtu.be/UN4Iyu9GDAs)
+🔗[![IncidentIQ Demo](https://img.youtube.com/vi/UN4Iyu9GDAs/maxresdefault.jpg)](https://youtu.be/UN4Iyu9GDAs)
+
 
 ## Screenshots
 
@@ -33,8 +34,8 @@ Built for real operational complexity. Not a tutorial project.
 
 ### Knowledge Base
 
-![Knowledge Base](screenshots/knowledge-base-Page.jpg)
-![Knowledge Base](screenshots/knowledge-base-Page2.jpg)
+![Knowledge Base](screenshots/Knowledge-base-Page.jpg)
+![Knowledge Base](screenshots/Knowledge-base-Page2.jpg)
 
 ### Bulk Operations
 
