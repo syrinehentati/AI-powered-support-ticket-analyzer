@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EmbeddingService } from './embedding.service';
-import { KnowledgeBaseEntity } from './knowledge-base.entity';
+import { KnowledgeBaseEntity } from './entities/knowledge-base.entity';
 
 @Injectable()
 export class KnowledgeBaseService {
   constructor(
     @InjectRepository(KnowledgeBaseEntity)
     private kbRepository: Repository<KnowledgeBaseEntity>,
-    private readonly embeddingService: EmbeddingService,
+    private readonly embeddingService: EmbeddingService
   ) {}
 
   async addEntry(
@@ -20,7 +20,7 @@ export class KnowledgeBaseService {
     resolution: string[],
     category: string,
     severity: string,
-    detected_language: string,
+    detected_language: string
   ): Promise<KnowledgeBaseEntity> {
     // check for duplicate
     const existing = await this.kbRepository.findOne({
@@ -31,7 +31,7 @@ export class KnowledgeBaseService {
     const text = this.embeddingService.prepareTicketText(
       title,
       description,
-      logs,
+      logs
     );
     const embedding = await this.embeddingService.generateEmbedding(text);
 
@@ -55,7 +55,7 @@ export class KnowledgeBaseService {
     description: string,
     logs: string[],
     topK: number = 3,
-    threshold: number = 0.6,
+    threshold: number = 0.6
   ) {
     const entries = await this.kbRepository.find();
     if (entries.length === 0) return [];
@@ -63,16 +63,15 @@ export class KnowledgeBaseService {
     const text = this.embeddingService.prepareTicketText(
       title,
       description,
-      logs,
+      logs
     );
-    const queryEmbedding =
-      await this.embeddingService.generateEmbedding(text);
+    const queryEmbedding = await this.embeddingService.generateEmbedding(text);
 
     const similarities = entries.map((entry) => ({
       entry,
       similarity: this.embeddingService.cosineSimilarity(
         queryEmbedding,
-        entry.embedding,
+        entry.embedding
       ),
     }));
 

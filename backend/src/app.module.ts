@@ -6,8 +6,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalysisModule } from './analysis/analysis.module';
 import { TicketsModule } from './tickets/tickets.module';
 import { KnowledgeBaseModule } from './knowledge-base/knowledge-base.module';
-import { TicketEntity } from './tickets/ticket.entity';
-import { KnowledgeBaseEntity } from './knowledge-base/knowledge-base.entity';
+import { TicketEntity } from './tickets/entites/ticket.entity';
+import { KnowledgeBaseEntity } from './knowledge-base/entities/knowledge-base.entity';
 
 @Module({
   imports: [
@@ -23,7 +23,7 @@ import { KnowledgeBaseEntity } from './knowledge-base/knowledge-base.entity';
         password: config.get('DATABASE_PASSWORD'),
         database: config.get('DATABASE_NAME'),
         entities: [TicketEntity, KnowledgeBaseEntity],
-        synchronize: true, 
+        synchronize: true,
       }),
     }),
     AnalysisModule,
