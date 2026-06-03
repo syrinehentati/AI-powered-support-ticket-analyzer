@@ -1,6 +1,6 @@
 [
   {
-    "ticket_id": "TKT-020",
+    "ticket_id": "TKT-027",
     "title": "Authentication service returning 503 on login",
     "severity": "critical",
     "description": "The authentication service has been returning 503 errors for all login attempts since 08:15 this morning. All users are locked out of the platform. The issue started immediately after a routine certificate renewal was applied to the auth cluster. The ops team has attempted a rollback but the service has not recovered. Customer support is receiving a high volume of complaints.",

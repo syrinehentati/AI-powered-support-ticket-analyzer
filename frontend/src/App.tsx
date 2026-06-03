@@ -6,7 +6,6 @@ import BulkAnalyze from './pages/bulkAnalyzePage';
 import KnowledgeBase from './pages/knowledgeBasePage';
 import Dashboard from './pages/DashboardPage';
 
-import ErrorBoundary from './components/ErrorBoundary';
 import { useTheme } from './context/ThemeContext';
 import Sidebar from './layouts/Sidebar';
 import NetworkErrorBanner from './components/Networkerrorbanner';

@@ -243,7 +243,7 @@ function BulkAnalyzePage() {
     <div>
       {/* ── Upload Canvas ──────────────────────────────────────── */}
       <p style={{ margin: '0 0 1rem', color: '#666', fontSize: '14px' }}>
-        Analyzes all mock tickets at once — English, French, Arabic and German.
+        Analyzes all tickets at once in any language.
       </p>
       <div
         onDrop={onDrop}
