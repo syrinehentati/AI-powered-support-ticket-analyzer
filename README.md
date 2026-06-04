@@ -34,8 +34,8 @@ Built for real operational complexity. Not a tutorial project.
 
 ### Knowledge Base
 
-![Knowledge Base](screenshots/Knowledge-base-Page.jpg)
-![Knowledge Base](screenshots/Knowledge-base-Page2.jpg)
+![Knowledge Base](screenshots/Knowledge-Base-Page.jpg)
+![Knowledge Base](screenshots/Knowledge-Base-Page2.jpg)
 
 ### Bulk Operations
 
