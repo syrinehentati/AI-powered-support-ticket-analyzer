@@ -23,7 +23,7 @@ const items = [
 ] as const;
 
 export default function Sidebar({ current, onChange }: Props) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   return (
     <aside
       style={{
