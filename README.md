@@ -13,9 +13,11 @@ Built for real operational complexity. Not a tutorial project.
 
 ## Live Demo
 
-🔗[![IncidentIQ Demo](https://img.youtube.com/vi/UN4Iyu9GDAs/maxresdefault.jpg)](https://youtu.be/UN4Iyu9GDAs)
+## Live Demo
 
+🔗 [Live App](https://majestic-crumble-3f7673.netlify.app)
 
+[![IncidentIQ Demo](https://img.youtube.com/vi/UN4Iyu9GDAs/maxresdefault.jpg)](https://youtu.be/UN4Iyu9GDAs)
 ## Screenshots
 
 ### Dashboard
