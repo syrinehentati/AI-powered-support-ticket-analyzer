@@ -133,6 +133,27 @@ function BulkAnalyzePage() {
     e.target.value = '';
   }
 
+    // ─── download template ────────────────────────────────────────
+
+  function handleDownloadTemplate() {
+    const rows = [
+      {
+        ticket_id: 'TKT-001',
+        title: 'Example ticket title',
+        severity: 'low | medium | high | critical',
+        description: 'Describe the issue here.',
+        logs: 'log line 1|log line 2|log line 3',
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(rows, {
+      header: ['ticket_id', 'title', 'severity', 'description', 'logs'],
+    });
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Tickets');
+    XLSX.writeFile(workbook, 'tickets-template.xlsx');
+  }
+
   // ─── analyze uploaded tickets ─────────────────────────────────
 
   async function handleAnalyzeUploaded() {
@@ -242,9 +263,37 @@ function BulkAnalyzePage() {
   return (
     <div>
       {/* ── Upload Canvas ──────────────────────────────────────── */}
+         <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '1rem',
+        }}
+      >
       <p style={{ margin: '0 0 1rem', color: '#666', fontSize: '14px' }}>
         Analyzes all tickets at once in any language.
       </p>
+      <button
+          onClick={handleDownloadTemplate}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 14px',
+            border: '1px solid #e0e0e0',
+            borderRadius: '6px',
+            backgroundColor: 'white',
+            color: '#2c3e50',
+            fontSize: '13px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          ⬇ Download template
+        </button>
+      </div>
       <div
         onDrop={onDrop}
         onDragOver={onDragOver}
